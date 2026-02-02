@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TaxiStand, ChangeLog, ViewState } from './types';
+import { TaxiStand, ViewState } from './types';
 import { getStands, saveStand, deleteStand, generateChanges } from './services/storageService';
 import StandForm from './components/StandForm';
 import StandDetails from './components/StandDetails';
@@ -50,14 +50,20 @@ const App: React.FC = () => {
       const data = await getStands();
       setStands(data);
     } catch (err: any) {
-      console.error(err);
+      console.error("Firebase Error:", err);
       let errorMessage = "Veritabanına bağlanılamadı.";
+      
       if (err.message && err.message.includes("services/firebaseConfig.ts")) {
         errorMessage = err.message;
       } else if (err.code === "permission-denied") {
-        errorMessage = "Yetki hatası: Firestore kuralları erişimi engelliyor. (Test modunu açtığınızdan emin olun)";
+        errorMessage = "Yetki Hatası: Firestore veritabanı kuralları okuma/yazmayı engelliyor. (Test modunu açın: allow read, write: if true;)";
+      } else if (err.code === "unavailable") {
+        errorMessage = "Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin.";
+      } else if (err.message && err.message.includes("project")) {
+        errorMessage = "Proje Bulunamadı: Firebase Console'da 'Firestore Database' oluşturduğunuzdan emin olun. Sadece proje açmak yetmez, veritabanını da 'Create Database' diyerek oluşturmalısınız.";
       } else {
-        errorMessage = "Veritabanı bağlantısı kurulamadı. Lütfen 'services/firebaseConfig.ts' dosyasındaki ayarların doğru olduğundan emin olun.";
+        // Show raw error for easier debugging
+        errorMessage = `Veritabanı Hatası (${err.code || 'Bilinmeyen'}): ${err.message}`;
       }
       setError(errorMessage);
     } finally {
@@ -149,7 +155,8 @@ const App: React.FC = () => {
       await refreshData();
       setView('LIST');
     } catch (err) {
-      alert("Kayıt işlemi başarısız oldu. Lütfen veritabanı ayarlarını kontrol edin.");
+      console.error(err);
+      alert("Kayıt işlemi başarısız oldu. Hata detayları konsolda.");
     }
   };
 
@@ -188,11 +195,11 @@ const App: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start gap-3 shadow-sm animate-in fade-in slide-in-from-top-2">
              <AlertTriangle className="shrink-0 mt-0.5" size={20} />
-             <div>
+             <div className="flex-1">
                <h3 className="font-bold">Bağlantı Hatası</h3>
-               <p className="text-sm">{error}</p>
+               <p className="text-sm mt-1">{error}</p>
              </div>
           </div>
         )}
@@ -351,7 +358,12 @@ const App: React.FC = () => {
                           ) : (
                             <tr>
                               <td colSpan={6} className="p-8 text-center text-slate-500">
-                                {error ? 'Veriler yüklenirken hata oluştu.' : 'Kayıt bulunamadı.'}
+                                {error ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span className="font-semibold text-red-500">Bağlantı Sorunu</span>
+                                        <span className="text-xs">Yukarıdaki hata mesajını kontrol edin.</span>
+                                    </div>
+                                ) : 'Kayıt bulunamadı.'}
                               </td>
                             </tr>
                           )}

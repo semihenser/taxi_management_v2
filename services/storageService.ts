@@ -1,36 +1,54 @@
 import { TaxiStand, ChangeLog } from '../types';
-import { db } from './firebaseConfig';
+import { db, isConfigured } from './firebaseConfig';
 import { 
   collection, 
   getDocs, 
   setDoc, 
   deleteDoc, 
-  doc 
+  doc,
+  Firestore
 } from 'firebase/firestore';
 
 // Collection Reference
 const COLLECTION_NAME = 'taxi_stands';
 
+// Yardımcı fonksiyon: Veritabanı hazır mı kontrol et
+const getDb = (): Firestore => {
+  if (!isConfigured) {
+    throw new Error("Lütfen 'services/firebaseConfig.ts' dosyasını açıp Firebase ayarlarınızı giriniz. (apiKey, projectId vb.)");
+  }
+  if (!db) {
+    throw new Error("Firebase veritabanı bağlantısı başlatılamadı. API anahtarlarınızı ve internet bağlantınızı kontrol edin.");
+  }
+  return db;
+};
+
 export const getStands = async (): Promise<TaxiStand[]> => {
-  // Hataları burada yakalamıyoruz, App.tsx'in yakalamasına izin veriyoruz.
-  // Böylece kullanıcı ekranda hatayı görebilir.
-  const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-  const stands: TaxiStand[] = [];
-  querySnapshot.forEach((doc) => {
-    stands.push(doc.data() as TaxiStand);
-  });
-  return stands;
+  const database = getDb();
+  try {
+    const querySnapshot = await getDocs(collection(database, COLLECTION_NAME));
+    const stands: TaxiStand[] = [];
+    querySnapshot.forEach((doc) => {
+      stands.push(doc.data() as TaxiStand);
+    });
+    return stands;
+  } catch (error: any) {
+    console.error("getStands Error:", error);
+    throw error;
+  }
 };
 
 export const saveStand = async (stand: TaxiStand): Promise<void> => {
+  const database = getDb();
   // Firestore'da 'doc' fonksiyonu ID ile belirli bir dokümanı referans alır.
   // Eğer ID varsa üzerine yazar (update), yoksa oluşturur.
-  const standRef = doc(db, COLLECTION_NAME, stand.id);
+  const standRef = doc(database, COLLECTION_NAME, stand.id);
   await setDoc(standRef, stand);
 };
 
 export const deleteStand = async (id: string): Promise<void> => {
-  await deleteDoc(doc(db, COLLECTION_NAME, id));
+  const database = getDb();
+  await deleteDoc(doc(database, COLLECTION_NAME, id));
 };
 
 // Change Log Helper

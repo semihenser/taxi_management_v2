@@ -1,8 +1,7 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import * as firebaseAppModule from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
-// ÖNEMLİ: Firebase Konsolundan aldığın 'firebaseConfig' nesnesini buraya yapıştır.
-// Aşağıdaki değerleri kendi proje ayarlarındaki değerlerle değiştirmezseniz veritabanı ÇALIŞMAZ.
+// Sağladığınız doğru bilgileri buraya ekledim.
 const firebaseConfig = {
   apiKey: "AIzaSyCAdwbA5u0oLe0m6oKryKwHx1XBiDEWnrk",
   authDomain: "izbb-taxi-management.firebaseapp.com",
@@ -12,22 +11,24 @@ const firebaseConfig = {
   appId: "1:956551883987:web:3f6bc14aad0c026f357826",
 };
 
-// Basit kontrol: Değerler varsayılan mı?
-export const isConfigured = firebaseConfig.apiKey !== "AIzaSyCAdwbA5u0oLe0m6oKryKwHx1XBiDEWnrk";
+// DÜZELTME: Artık kontrolü placeholder (yer tutucu) metne göre yapıyoruz.
+// Sizin girdiğiniz anahtar 'BURAYA_API_KEY_GELECEK' olmadığı sürece sistem çalışacaktır.
+export const isConfigured = firebaseConfig.apiKey !== "BURAYA_API_KEY_GELECEK";
 
 let app;
-let dbInstance: Firestore;
+let dbInstance;
 
 if (isConfigured) {
   try {
-    app = initializeApp(firebaseConfig);
+    app = firebaseAppModule.initializeApp(firebaseConfig);
     dbInstance = getFirestore(app);
+    console.log("Firebase başarıyla başlatıldı.");
   } catch (error) {
     console.error("Firebase başlatma hatası:", error);
   }
 } else {
-  console.warn("Firebase yapılandırması yapılmamış. Uygulama demo modunda veya hatalı çalışabilir.");
+  console.warn("Firebase yapılandırması yapılmamış.");
 }
 
-// db undefined olabilir, bunu kullanan yerlerde kontrol edeceğiz
-export const db = dbInstance!;
+export const db = dbInstance;
+export const firebaseApp = app;
