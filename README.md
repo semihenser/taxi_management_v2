@@ -1,1 +1,1 @@
-İzmir Büyükşehir Belediyesi Taksi YÖnetim Sistemi
+İzmir Büyükşehir Belediyesi Taksi Yönetim Sistemi
