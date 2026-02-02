@@ -1,0 +1,375 @@
+[
+  {
+    "id": "1769777545082",
+    "name": "Semih Taksi",
+    "phone": "0232 3211245",
+    "city": "İzmir",
+    "district": "Konak",
+    "neighborhood": "Alsancak",
+    "street": "Kıbrıs Şehitleri Cad.",
+    "address": "Kıbrıs Şehitleri Cad. Alsancak Mah. Konak/İZMİR",
+    "capacity": 6,
+    "plates": [
+      "35 T 1881",
+      "35 T 1919"
+    ],
+    "ukomeDecisionNo": "2025/13",
+    "ukomeDate": "2026-01-30",
+    "ukomeSummary": "Plaka değişikliği",
+    "status": "Aktif",
+    "officeType": "TİP1",
+    "responsibility": "Büyükşehir",
+    "notes": "",
+    "history": [
+      {
+        "id": "17697779054380.8940606917525409",
+        "timestamp": "2026-01-30T12:58:25.438Z",
+        "fieldName": "capacity",
+        "oldValue": "(Boş)",
+        "newValue": "4",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/12",
+        "relatedUkomeDate": "2025-03-30"
+      },
+      {
+        "id": "17697779054380.8391500306699466",
+        "timestamp": "2026-01-30T12:58:25.438Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2026/88",
+        "newValue": "2025/12",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/12",
+        "relatedUkomeDate": "2025-03-30"
+      },
+      {
+        "id": "17697779054380.695508301373452",
+        "timestamp": "2026-01-30T12:58:25.438Z",
+        "fieldName": "ukomeDate",
+        "oldValue": "2026-01-16",
+        "newValue": "2025-03-30",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/12",
+        "relatedUkomeDate": "2025-03-30"
+      },
+      {
+        "id": "17697779054380.4608957847288635",
+        "timestamp": "2026-01-30T12:58:25.438Z",
+        "fieldName": "ukomeSummary",
+        "oldValue": "Değişiklik.",
+        "newValue": "Bir şeyler değiştirilmiştir.",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/12",
+        "relatedUkomeDate": "2025-03-30"
+      },
+      {
+        "id": "17697779054380.1124828882645903",
+        "timestamp": "2026-01-30T12:58:25.438Z",
+        "fieldName": "officeType",
+        "oldValue": "TİP2",
+        "newValue": "TİP1",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/12",
+        "relatedUkomeDate": "2025-03-30"
+      },
+      {
+        "id": "17697779436460.24519306312374822",
+        "timestamp": "2026-01-30T12:59:03.646Z",
+        "fieldName": "capacity",
+        "oldValue": "4",
+        "newValue": "6",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/26",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697779436460.4549204352572491",
+        "timestamp": "2026-01-30T12:59:03.646Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2025/12",
+        "newValue": "2025/26",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/26",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697779436460.10139636102470795",
+        "timestamp": "2026-01-30T12:59:03.646Z",
+        "fieldName": "ukomeDate",
+        "oldValue": "2025-03-30",
+        "newValue": "2026-01-30",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/26",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697779436460.09236770595800392",
+        "timestamp": "2026-01-30T12:59:03.646Z",
+        "fieldName": "ukomeSummary",
+        "oldValue": "Bir şeyler değiştirilmiştir.",
+        "newValue": "Bir şeyler tekrar değiştirilmiştir.",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/26",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697799814460.28181247793704745",
+        "timestamp": "2026-01-30T13:33:01.446Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2025/26",
+        "newValue": "2026/99",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026/99",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697799814460.9266461044873042",
+        "timestamp": "2026-01-30T13:33:01.446Z",
+        "fieldName": "ukomeSummary",
+        "oldValue": "Bir şeyler tekrar değiştirilmiştir.",
+        "newValue": "Plaka değişikliği",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026/99",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697799814460.5985046905329465",
+        "timestamp": "2026-01-30T13:33:01.446Z",
+        "fieldName": "plates",
+        "oldValue": "35 T 1234, 35 T 3344",
+        "newValue": "35 T 1234, 35 T 1881",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026/99",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697802314390.9513315593457785",
+        "timestamp": "2026-01-30T13:37:11.439Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2026/99",
+        "newValue": "2025/13",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/13",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697802314390.12264734033676183",
+        "timestamp": "2026-01-30T13:37:11.439Z",
+        "fieldName": "plates",
+        "oldValue": "35 T 1234, 35 T 1881",
+        "newValue": "35 T 1881, 35 T 1919",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2025/13",
+        "relatedUkomeDate": "2026-01-30"
+      }
+    ],
+    "createdAt": "2026-01-30T12:52:25.057Z",
+    "updatedAt": "2026-01-30T13:37:11.438Z"
+  },
+  {
+    "id": "1769777698441",
+    "name": "ERKAN TAKSİ",
+    "phone": "02322931327",
+    "city": "İzmir",
+    "district": "Konak",
+    "neighborhood": "Göztepe",
+    "street": "100. Sokak",
+    "address": "100. Sokak Göztepe Mah. Konak/İZMİR",
+    "capacity": 3,
+    "plates": [
+      "35 AYZ652"
+    ],
+    "ukomeDecisionNo": "20260128",
+    "ukomeDate": "2025-01-01",
+    "ukomeSummary": "eVET",
+    "status": "Aktif",
+    "officeType": "TİP3",
+    "responsibility": "Büyükşehir",
+    "notes": "",
+    "history": [],
+    "createdAt": "2026-01-30T12:54:58.375Z",
+    "updatedAt": "2026-01-30T13:02:27.399Z"
+  },
+  {
+    "id": "1769778077911",
+    "name": "YİĞİT TAKSİ",
+    "phone": "023232545",
+    "city": "İzmir",
+    "district": "Karşıyaka",
+    "neighborhood": "Bostanlı",
+    "street": "Cemal Gürsel Cad.",
+    "address": "Cemal Gürsel Cad. Bostanlı Mah. Karşıyaka/İZMİR",
+    "capacity": 2,
+    "plates": [],
+    "ukomeDecisionNo": "2026",
+    "ukomeDate": "2026-01-30",
+    "ukomeSummary": "Durak onaylandı.",
+    "status": "Aktif",
+    "officeType": "TİP3",
+    "responsibility": "Büyükşehir",
+    "notes": "",
+    "history": [
+      {
+        "id": "17697804406070.5491709213530034",
+        "timestamp": "2026-01-30T13:40:40.607Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2026/18",
+        "newValue": "2026",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697804406070.8463791419458637",
+        "timestamp": "2026-01-30T13:40:40.607Z",
+        "fieldName": "ukomeDate",
+        "oldValue": "2026-01-18",
+        "newValue": "2026-01-30",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697804406070.7781676738812815",
+        "timestamp": "2026-01-30T13:40:40.607Z",
+        "fieldName": "ukomeSummary",
+        "oldValue": "DURAK İSMİ ONAYLANMIŞTIR.",
+        "newValue": "Durak onaylandı.",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697804406070.39324134364650476",
+        "timestamp": "2026-01-30T13:40:40.607Z",
+        "fieldName": "status",
+        "oldValue": "Onay Bekliyor",
+        "newValue": "Aktif",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "2026",
+        "relatedUkomeDate": "2026-01-30"
+      }
+    ],
+    "createdAt": "2026-01-30T13:01:17.903Z",
+    "updatedAt": "2026-01-30T13:40:40.607Z"
+  },
+  {
+    "id": "1769780043423",
+    "name": "İLTER TAKSİ",
+    "phone": "02325466585",
+    "city": "İzmir",
+    "district": "Buca",
+    "neighborhood": "Şirinyer",
+    "street": "Menderes Cad.",
+    "address": "Menderes Cad. Şirinyer Mah. Buca/İZMİR",
+    "capacity": 8,
+    "plates": [],
+    "ukomeDecisionNo": "2024/11",
+    "ukomeDate": "2026-01-09",
+    "ukomeSummary": "Durak onaylanmıştır.",
+    "status": "Aktif",
+    "officeType": "TİP1",
+    "responsibility": "Özel Mülkiyet",
+    "notes": "",
+    "history": [],
+    "createdAt": "2026-01-30T13:34:03.414Z",
+    "updatedAt": "2026-01-30T13:34:53.390Z"
+  },
+  {
+    "id": "1769780468577",
+    "name": "Şen Çiftlik Taksi",
+    "phone": "0232 232 23 32",
+    "city": "İzmir",
+    "district": "Buca",
+    "neighborhood": "Tınaztepe",
+    "street": "Doğuş Cad.",
+    "address": "Doğuş Cad. Tınaztepe Mah. Buca/İZMİR",
+    "capacity": 5,
+    "plates": [
+      "35 T 123",
+      "35 T 156",
+      "35 T 213",
+      "35 T 241"
+    ],
+    "ukomeDecisionNo": "3453454",
+    "ukomeDate": "2026-01-30",
+    "ukomeSummary": "423423423",
+    "status": "Onay Bekliyor",
+    "officeType": "DİĞER",
+    "responsibility": "Büyükşehir",
+    "notes": "",
+    "history": [
+      {
+        "id": "17697814631870.6290037007038951",
+        "timestamp": "2026-01-30T13:57:43.187Z",
+        "fieldName": "ukomeDecisionNo",
+        "oldValue": "2022/16",
+        "newValue": "3453454",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "3453454",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697814631870.6326412371044259",
+        "timestamp": "2026-01-30T13:57:43.187Z",
+        "fieldName": "ukomeDate",
+        "oldValue": "2022-05-15",
+        "newValue": "2026-01-30",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "3453454",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697814631870.7224084996221867",
+        "timestamp": "2026-01-30T13:57:43.187Z",
+        "fieldName": "ukomeSummary",
+        "oldValue": "(Boş)",
+        "newValue": "423423423",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "3453454",
+        "relatedUkomeDate": "2026-01-30"
+      },
+      {
+        "id": "17697814631870.5389478881324148",
+        "timestamp": "2026-01-30T13:57:43.187Z",
+        "fieldName": "location",
+        "oldValue": "(Konum Yok)",
+        "newValue": "38.42316748624575, 27.248518466949466",
+        "changedBy": "Admin",
+        "relatedUkomeNo": "3453454",
+        "relatedUkomeDate": "2026-01-30"
+      }
+    ],
+    "createdAt": "2026-01-30T13:41:08.510Z",
+    "updatedAt": "2026-01-30T13:58:22.995Z",
+    "location": {
+      "lat": 38.42316748624575,
+      "lng": 27.248518466949466
+    }
+  },
+  {
+    "id": "1769781269724",
+    "name": "İzBB Taksi",
+    "phone": "0232 416 4545",
+    "city": "İzmir",
+    "district": "Konak",
+    "neighborhood": "Alsancak",
+    "street": "Talatpaşa Bulv.",
+    "address": "Talatpaşa Bulv. Alsancak Mah. Konak/İZMİR",
+    "location": {
+      "lat": 38.424646825593065,
+      "lng": 27.143579721450806
+    },
+    "capacity": 1,
+    "plates": [],
+    "ukomeDecisionNo": "2024/12",
+    "ukomeDate": "2026-01-01",
+    "ukomeSummary": "Durak onaylanmıştır.",
+    "status": "Aktif",
+    "officeType": "TİP1",
+    "responsibility": "Büyükşehir",
+    "notes": "",
+    "history": [],
+    "createdAt": "2026-01-30T13:54:29.686Z",
+    "updatedAt": "2026-01-30T13:55:38.159Z"
+  }
+]

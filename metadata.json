@@ -1,0 +1,7 @@
+{
+  "name": "TaksiYönetim - Taxi Stand Manager",
+  "description": "A comprehensive system to manage taxi stands, track UKOME decisions, and view historical changes using LocalStorage and Gemini AI.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
