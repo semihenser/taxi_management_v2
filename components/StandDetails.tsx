@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { TaxiStand } from '../types';
-import { ArrowLeft, MapPin, Phone, Car, FileText, History, ArrowRight, Building2, ShieldCheck, Info, Clock } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, Car, FileText, History, ArrowRight, Building2, ShieldCheck, Info, Clock, FileDown } from 'lucide-react';
+import { generateStandReport } from '../services/reportService';
 
 interface StandDetailsProps {
   stand: TaxiStand;
@@ -14,6 +14,10 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
   const sortedHistory = [...(stand.history || [])].sort((a, b) => 
     new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+
+  const handleDownloadReport = () => {
+    generateStandReport(stand);
+  };
 
   const getFieldLabel = (field: string) => {
     switch (field) {
@@ -61,13 +65,22 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
              <MapPin size={14} /> {stand.district} / {stand.city}
           </div>
         </div>
-        <button
-          onClick={() => onRevise(stand)}
-          className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
-        >
-          <FileText size={18} />
-          Revize Et (UKOME)
-        </button>
+        <div className="flex items-center gap-3">
+            <button
+            onClick={handleDownloadReport}
+            className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm flex items-center gap-2"
+            >
+            <FileDown size={18} />
+            Durak Raporu
+            </button>
+            <button
+            onClick={() => onRevise(stand)}
+            className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+            >
+            <FileText size={18} />
+            Revize Et (UKOME)
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

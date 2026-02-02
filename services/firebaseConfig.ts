@@ -1,5 +1,4 @@
-import { initializeApp, getApps } from "firebase/app";
-import type { FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 // Konfigürasyon öncelikle Environment Variable'lardan (VITE_...) okunur.
@@ -22,7 +21,6 @@ let dbInstance: Firestore | undefined;
 if (isConfigured) {
   try {
     // Uygulama daha önce başlatılmış mı kontrol et (Hot Reload hatalarını önler)
-    // firebase namespace'i üzerinden erişerek import hatalarını önlüyoruz
     const apps = getApps();
     if (apps.length === 0) {
         app = initializeApp(firebaseConfig);

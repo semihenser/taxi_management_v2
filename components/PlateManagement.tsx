@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { TaxiStand } from '../types';
-import { Search, Save, History, Car, ArrowRightLeft, MapPin, AlertCircle, CheckCircle2, ArrowLeft, Building2, Calendar } from 'lucide-react';
+import { Search, Save, History, Car, ArrowRightLeft, MapPin, AlertCircle, CheckCircle2, ArrowLeft, Building2, Calendar, FileDown } from 'lucide-react';
 import { saveStand, generateChanges } from '../services/storageService';
+import { generatePlateReport } from '../services/reportService';
 
 interface PlateManagementProps {
   stands: TaxiStand[];
@@ -90,6 +91,12 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         setSearchedPlate(plate);
         setSuccessMessage(null);
         setTargetStandId('');
+    }
+  };
+
+  const handleDownloadReport = () => {
+    if (searchedPlate) {
+        generatePlateReport(searchedPlate, plateHistory, currentStand || null);
     }
   };
 
@@ -215,10 +222,19 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                      {/* Status Card */}
                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                             <h3 className="font-semibold text-slate-800">Mevcut Durum</h3>
-                             <span className="font-mono font-bold text-lg bg-slate-200 px-3 py-1 rounded text-slate-800">
-                                {searchedPlate}
-                             </span>
+                             <div className="flex items-center gap-4">
+                                <h3 className="font-semibold text-slate-800">Mevcut Durum</h3>
+                                <span className="font-mono font-bold text-lg bg-slate-200 px-3 py-1 rounded text-slate-800">
+                                    {searchedPlate}
+                                </span>
+                             </div>
+                             
+                             <button 
+                                onClick={handleDownloadReport}
+                                className="flex items-center gap-2 text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                             >
+                                <FileDown size={16} /> PDF Rapor
+                             </button>
                          </div>
                          <div className="p-8 text-center">
                              {currentStand ? (
