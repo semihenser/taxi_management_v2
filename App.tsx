@@ -5,6 +5,7 @@ import StandForm from './components/StandForm';
 import StandDetails from './components/StandDetails';
 import HistoryViewer from './components/HistoryViewer';
 import StandMap from './components/StandMap';
+import PlateManagement from './components/PlateManagement';
 import { 
   Plus, 
   Search, 
@@ -16,10 +17,14 @@ import {
   Loader2,
   Map,
   List,
-  AlertTriangle
+  AlertTriangle,
+  LayoutDashboard,
+  ArrowLeft,
+  Car
 } from 'lucide-react';
 
 const App: React.FC = () => {
+  const [appMode, setAppMode] = useState<'LANDING' | 'STANDS' | 'PLATES'>('LANDING');
   const [view, setView] = useState<ViewState | 'MAP'>('LIST');
   const [formMode, setFormMode] = useState<'CREATE' | 'EDIT' | 'REVISION'>('CREATE');
   const [stands, setStands] = useState<TaxiStand[]>([]);
@@ -173,20 +178,90 @@ const App: React.FC = () => {
     s.ukomeDecisionNo?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // --- RENDER LOGIC ---
+
+  // 1. Landing Page
+  if (appMode === 'LANDING') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+          <div className="max-w-4xl w-full">
+              <div className="text-center mb-10">
+                   <div className="inline-flex items-center justify-center w-20 h-20 bg-yellow-400 rounded-2xl text-slate-900 mb-6 shadow-lg rotate-3">
+                       <CarTaxiFront size={48} />
+                   </div>
+                   <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">TaksiYönetim</h1>
+                   <p className="text-slate-500 text-lg">İzmir Taksi Durakları ve Plaka Yönetim Sistemi</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <button 
+                    onClick={() => setAppMode('STANDS')}
+                    className="group relative bg-white hover:bg-blue-600 border border-slate-200 hover:border-blue-600 p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 text-left flex flex-col items-start"
+                  >
+                      <div className="bg-blue-50 group-hover:bg-blue-500 p-4 rounded-xl mb-6 transition-colors">
+                          <LayoutDashboard size={32} className="text-blue-600 group-hover:text-white transition-colors" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-slate-800 group-hover:text-white mb-2">Durak Yönetim Paneli</h2>
+                      <p className="text-slate-500 group-hover:text-blue-100">
+                          Taksi duraklarını harita üzerinde görüntüleyin, kapasite bilgilerini yönetin, UKOME kararlarını işleyin.
+                      </p>
+                      <div className="mt-auto pt-6 flex items-center text-blue-600 group-hover:text-white font-medium">
+                          Paneli Aç <ArrowLeft className="rotate-180 ml-2" />
+                      </div>
+                  </button>
+
+                  <button 
+                    onClick={() => setAppMode('PLATES')}
+                    className="group relative bg-white hover:bg-purple-600 border border-slate-200 hover:border-purple-600 p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 text-left flex flex-col items-start"
+                  >
+                      <div className="bg-purple-50 group-hover:bg-purple-500 p-4 rounded-xl mb-6 transition-colors">
+                          <Car size={32} className="text-purple-600 group-hover:text-white transition-colors" />
+                      </div>
+                      <h2 className="text-2xl font-bold text-slate-800 group-hover:text-white mb-2">Plaka Yönetim Paneli</h2>
+                      <p className="text-slate-500 group-hover:text-purple-100">
+                          Plaka sorgulayın, araçların hangi durakta çalıştığını görün ve durak transfer işlemlerini gerçekleştirin.
+                      </p>
+                       <div className="mt-auto pt-6 flex items-center text-purple-600 group-hover:text-white font-medium">
+                          Paneli Aç <ArrowLeft className="rotate-180 ml-2" />
+                      </div>
+                  </button>
+              </div>
+          </div>
+      </div>
+    );
+  }
+
+  // 2. Plate Management Module
+  if (appMode === 'PLATES') {
+      return (
+          <PlateManagement 
+             stands={stands} 
+             onRefresh={refreshData} 
+             onBack={() => setAppMode('LANDING')} 
+          />
+      );
+  }
+
+  // 3. Stand Management Module (Existing App Content)
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col animate-in fade-in duration-300">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('LIST')}>
-            <div className="bg-yellow-400 p-2 rounded-lg text-slate-900">
-              <CarTaxiFront size={24} />
+          <div className="flex items-center gap-4">
+             <button onClick={() => setAppMode('LANDING')} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors" title="Ana Menüye Dön">
+                <ArrowLeft size={20} />
+             </button>
+             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('LIST')}>
+                <div className="bg-blue-600 p-2 rounded-lg text-white">
+                <LayoutDashboard size={20} />
+                </div>
+                <h1 className="text-xl font-bold text-slate-800 tracking-tight">Durak Yönetim Paneli</h1>
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">TaksiYönetim</h1>
           </div>
           
           <div className="text-sm text-slate-500 hidden sm:block">
-             Durak Kayıt Sistemi v1.1
+             Durak Kayıt Sistemi v1.2
           </div>
         </div>
       </header>
@@ -393,6 +468,7 @@ const App: React.FC = () => {
         {view === 'FORM' && (
           <StandForm 
             initialData={selectedStand}
+            existingStands={stands} // Pass full data for plate autocomplete
             onSave={handleSave}
             onCancel={() => setView('LIST')}
           />

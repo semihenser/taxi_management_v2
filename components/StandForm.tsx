@@ -1,19 +1,17 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TaxiStand, StandStatus } from '../types';
-import { Save, X, MapPin, Plus, Trash2, Car, Phone, FileText, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Save, X, MapPin, Plus, Trash2, Car, Phone, FileText, Loader2, Sparkles, Wand2, AlertTriangle } from 'lucide-react';
 import { generateDescriptionWithAI } from '../services/geminiService';
 import LocationPicker from './LocationPicker';
 
 interface StandFormProps {
   initialData?: TaxiStand;
-  onSave: (stand: TaxiStand) => void;
+  existingStands?: TaxiStand[];
+  onSave: (stand: TaxiStand) => Promise<void> | void;
   onCancel: () => void;
 }
 
 // MOCK DATA FOR IZMIR
-// Gerçek uygulamada bu veriler veritabanından veya bir JSON dosyasından gelmeli.
-// Haritadan gelen veri ile buradaki anahtarların eşleşmesi önemlidir.
 const IZMIR_DATA: any = {
   "Konak": {
     "Alsancak": ["Kıbrıs Şehitleri Cad.", "Talatpaşa Bulv.", "1456. Sokak", "Plevne Bulv."],
@@ -54,7 +52,7 @@ const RESPONSIBILITIES = [
   "Diğer"
 ];
 
-const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) => {
+const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [], onSave, onCancel }) => {
   const [formData, setFormData] = useState<TaxiStand>({
     id: '',
     name: '',
@@ -81,11 +79,29 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
 
   const [currentPlate, setCurrentPlate] = useState('');
   const [loadingAI, setLoadingAI] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Cascading Dropdown States
   const [districts, setDistricts] = useState<string[]>(Object.keys(IZMIR_DATA));
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
   const [streets, setStreets] = useState<string[]>([]);
+
+  // Collect all known plates from other stands for autocomplete and warnings
+  const otherPlatesMap = useMemo(() => {
+    const map = new Map<string, string>(); // Plate -> StandName
+    existingStands.forEach(stand => {
+        // Skip current stand being edited
+        if (initialData && stand.id === initialData.id) return;
+        if (!stand.plates) return;
+        
+        stand.plates.forEach(p => map.set(p, stand.name));
+    });
+    return map;
+  }, [existingStands, initialData]);
+
+  const sortedKnownPlates = useMemo(() => {
+     return Array.from(otherPlatesMap.keys()).sort();
+  }, [otherPlatesMap]);
 
   useEffect(() => {
     if (initialData) {
@@ -115,7 +131,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
     updateDistrict(dist);
   };
   
-  // Logic extracted to support both manual and map-based updates
   const updateDistrict = (dist: string) => {
     setFormData(prev => ({ 
         ...prev, 
@@ -156,7 +171,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
       if (addr.district) {
           const cleanDistrict = addr.district.replace(/(İlçesi|İlçe)$/i, '').trim();
           
-          // Türkçe karakter duyarlı arama
           const foundKey = Object.keys(IZMIR_DATA).find(
               key => key.toLocaleLowerCase('tr-TR') === cleanDistrict.toLocaleLowerCase('tr-TR')
           );
@@ -169,7 +183,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
 
       // 2. Mahalle Eşleştirme
       if (matchedDistrict && addr.neighborhood) {
-          // "Alsancak Mahallesi", "Alsancak Mah.", "Alsancak Mh." gibi varyasyonları temizle
           const cleanNeigh = addr.neighborhood
               .replace(/(Mahallesi|Mah\.|Mah|Mh\.|Mh)$/i, '')
               .trim();
@@ -177,7 +190,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
           const districtData = IZMIR_DATA[matchedDistrict];
           
           if (districtData) {
-              // Türkçe karakter duyarlı mahalle araması
               const foundNeighKey = Object.keys(districtData).find(
                   key => key.toLocaleLowerCase('tr-TR') === cleanNeigh.toLocaleLowerCase('tr-TR')
               );
@@ -191,11 +203,9 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
 
       // 3. State'leri tek seferde ve tutarlı sırayla güncelle
       if (matchedDistrict) {
-          // Önce listeleri güncelle
           setNeighborhoods(newNeighborhoodsList);
           setStreets(newStreetsList);
 
-          // Sonra seçili değerleri güncelle
           setFormData(prev => ({
               ...prev,
               district: matchedDistrict,
@@ -225,7 +235,7 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
     const formattedPlate = currentPlate.toUpperCase().trim();
     
     if (formData.plates.includes(formattedPlate)) {
-        alert("Bu plaka zaten ekli.");
+        alert("Bu plaka zaten bu durakta ekli.");
         return;
     }
 
@@ -250,16 +260,30 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
       }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fullAddress = `${formData.street || ''} ${formData.neighborhood || ''} Mah. ${formData.district || ''}/İZMİR`;
-    onSave({
-      ...formData,
-      address: fullAddress,
-      capacity: Number(formData.capacity),
-      updatedAt: new Date().toISOString()
-    });
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+        const fullAddress = `${formData.street || ''} ${formData.neighborhood || ''} Mah. ${formData.district || ''}/İZMİR`;
+        await onSave({
+          ...formData,
+          address: fullAddress,
+          capacity: Number(formData.capacity),
+          updatedAt: new Date().toISOString()
+        });
+        // Başarılı olursa parent component view'ı değiştireceği için unmount olur, 
+        // setIsSubmitting(false) yapmaya gerek yok.
+    } catch (error) {
+        console.error("Kaydetme hatası:", error);
+        alert("Kayıt sırasında bir hata oluştu.");
+        setIsSubmitting(false);
+    }
   };
+
+  // Warning for the current input
+  const duplicateWarningStand = currentPlate && otherPlatesMap.get(currentPlate.toUpperCase().trim());
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 animate-in fade-in zoom-in duration-300">
@@ -281,7 +305,7 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* UKOME Section - Highlighted because it's the driver of change */}
+        {/* UKOME Section */}
         <div className="bg-blue-50 p-5 rounded-xl border border-blue-200 shadow-sm">
              <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
                 <FileText size={18} /> GİRİLEN UKOME KARAR BİLGİLERİ
@@ -449,7 +473,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
                          <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1">Sokak / Cadde</label>
                             <div className="relative">
-                                {/* Eğer listede varsa select, yoksa input gibi davranmalı ama şimdilik hibrit çözüm */}
                                 <input 
                                     list="streets-list"
                                     name="street"
@@ -511,22 +534,38 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
                 </span>
             </h3>
             
-            <div className="flex gap-2 mb-4">
-                <input
-                    type="text"
-                    value={currentPlate}
-                    onChange={(e) => setCurrentPlate(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Plaka Giriniz (Örn: 35 T 1234)"
-                    className="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none"
-                />
-                <button
-                    type="button"
-                    onClick={handleAddPlate}
-                    className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
-                >
-                    <Plus size={18} /> Ekle
-                </button>
+            <div className="flex flex-col gap-2 mb-4">
+                <div className="flex gap-2">
+                    <input
+                        list="known-plates"
+                        type="text"
+                        value={currentPlate}
+                        onChange={(e) => setCurrentPlate(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Plaka Giriniz veya Seçiniz (Örn: 35 T 1234)"
+                        className="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none uppercase font-mono"
+                    />
+                    <datalist id="known-plates">
+                        {sortedKnownPlates.map(p => (
+                            <option key={p} value={p}>{otherPlatesMap.get(p) || 'Bilinmiyor'} durağında</option>
+                        ))}
+                    </datalist>
+                    <button
+                        type="button"
+                        onClick={handleAddPlate}
+                        className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
+                    >
+                        <Plus size={18} /> Ekle
+                    </button>
+                </div>
+                {duplicateWarningStand && (
+                    <div className="flex items-center gap-1.5 text-xs text-orange-700 bg-orange-100 px-3 py-1.5 rounded-md border border-orange-200">
+                        <AlertTriangle size={12} className="shrink-0" />
+                        <span>
+                            <strong>Dikkat:</strong> Bu plaka şu anda <strong>{duplicateWarningStand}</strong> durağında kayıtlı görünüyor.
+                        </span>
+                    </div>
+                )}
             </div>
 
             {formData.plates.length > 0 ? (
@@ -576,16 +615,18 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            disabled={isSubmitting}
+            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
             İptal
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm"
+            disabled={isSubmitting || loadingAI}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            <Save size={18} />
-            Kaydet
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
         </div>
       </form>
