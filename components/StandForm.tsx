@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TaxiStand, StandStatus } from '../types';
-import { Save, X, MapPin, Plus, Trash2, Car, Phone, FileText, Loader2, Sparkles } from 'lucide-react';
+import { Save, X, MapPin, Plus, Trash2, Car, Phone, FileText, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { generateDescriptionWithAI } from '../services/geminiService';
 import LocationPicker from './LocationPicker';
 
@@ -12,20 +12,26 @@ interface StandFormProps {
 }
 
 // MOCK DATA FOR IZMIR
+// Gerçek uygulamada bu veriler veritabanından veya bir JSON dosyasından gelmeli.
+// Haritadan gelen veri ile buradaki anahtarların eşleşmesi önemlidir.
 const IZMIR_DATA: any = {
   "Konak": {
     "Alsancak": ["Kıbrıs Şehitleri Cad.", "Talatpaşa Bulv.", "1456. Sokak", "Plevne Bulv."],
     "Göztepe": ["Mithatpaşa Cad.", "Susuzdede Parkı", "100. Sokak", "Mustafa Kemal Sahil Bulv."],
     "Pasaport": ["Cumhuriyet Bulv.", "Akdeniz Cad.", "1382. Sokak"],
+    "Mimar Sinan": ["Şair Eşref Bulv.", "Ziya Gökalp Bulv."],
+    "Kültür": ["Şevket Özçelik Sok.", "1390. Sokak"]
   },
   "Karşıyaka": {
     "Bostanlı": ["Cemal Gürsel Cad.", "Şehitler Bulv.", "2010. Sokak", "Bostanlı İskelesi"],
     "Mavişehir": ["Cahar Dudayev Bulv.", "Aziz Nesin Bulv.", "2040. Sokak"],
     "Çarşı": ["Kemalpaşa Cad.", "Salah Birsel Sok.", "1710. Sokak"],
+    "Bahçelievler": ["Zübeyde Hanım Cad.", "1671. Sokak"]
   },
   "Bornova": {
     "Özkanlar": ["Mustafa Kemal Cad.", "Sakarya Cad.", "252. Sokak"],
     "Küçükpark": ["Süvari Cad.", "Zafer Cad.", "160. Sokak"],
+    "Kazımdirik": ["Gediz Cad.", "372. Sokak"]
   },
   "Buca": {
     "Şirinyer": ["Menderes Cad.", "Koşuyolu Cad.", "Forbes Cad."],
@@ -106,28 +112,97 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
 
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const dist = e.target.value;
+    updateDistrict(dist);
+  };
+  
+  // Logic extracted to support both manual and map-based updates
+  const updateDistrict = (dist: string) => {
     setFormData(prev => ({ 
         ...prev, 
         district: dist, 
         neighborhood: '', 
         street: '' 
     }));
-    setNeighborhoods(dist ? Object.keys(IZMIR_DATA[dist]) : []);
+    setNeighborhoods(dist && IZMIR_DATA[dist] ? Object.keys(IZMIR_DATA[dist]) : []);
     setStreets([]);
   };
 
   const handleNeighborhoodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const neigh = e.target.value;
+    updateNeighborhood(neigh, formData.district);
+  };
+
+  const updateNeighborhood = (neigh: string, currentDistrict: string) => {
     setFormData(prev => ({ 
         ...prev, 
         neighborhood: neigh, 
         street: '' 
     }));
-    if (formData.district && neigh) {
-        setStreets(IZMIR_DATA[formData.district][neigh] || []);
+    if (currentDistrict && neigh && IZMIR_DATA[currentDistrict] && IZMIR_DATA[currentDistrict][neigh]) {
+        setStreets(IZMIR_DATA[currentDistrict][neigh] || []);
     } else {
         setStreets([]);
     }
+  };
+
+  // Haritadan adres bulunduğunda çalışır
+  const handleAddressFound = (addr: { district?: string; neighborhood?: string; street?: string; fullAddress?: string }) => {
+      let matchedDistrict = '';
+      let matchedNeighborhood = '';
+      let newNeighborhoodsList: string[] = [];
+      let newStreetsList: string[] = [];
+
+      // 1. İlçe Eşleştirme
+      if (addr.district) {
+          const cleanDistrict = addr.district.replace(/(İlçesi|İlçe)$/i, '').trim();
+          
+          // Türkçe karakter duyarlı arama
+          const foundKey = Object.keys(IZMIR_DATA).find(
+              key => key.toLocaleLowerCase('tr-TR') === cleanDistrict.toLocaleLowerCase('tr-TR')
+          );
+          
+          if (foundKey) {
+              matchedDistrict = foundKey;
+              newNeighborhoodsList = Object.keys(IZMIR_DATA[matchedDistrict]);
+          }
+      }
+
+      // 2. Mahalle Eşleştirme
+      if (matchedDistrict && addr.neighborhood) {
+          // "Alsancak Mahallesi", "Alsancak Mah.", "Alsancak Mh." gibi varyasyonları temizle
+          const cleanNeigh = addr.neighborhood
+              .replace(/(Mahallesi|Mah\.|Mah|Mh\.|Mh)$/i, '')
+              .trim();
+              
+          const districtData = IZMIR_DATA[matchedDistrict];
+          
+          if (districtData) {
+              // Türkçe karakter duyarlı mahalle araması
+              const foundNeighKey = Object.keys(districtData).find(
+                  key => key.toLocaleLowerCase('tr-TR') === cleanNeigh.toLocaleLowerCase('tr-TR')
+              );
+              
+              if (foundNeighKey) {
+                  matchedNeighborhood = foundNeighKey;
+                  newStreetsList = IZMIR_DATA[matchedDistrict][matchedNeighborhood] || [];
+              }
+          }
+      }
+
+      // 3. State'leri tek seferde ve tutarlı sırayla güncelle
+      if (matchedDistrict) {
+          // Önce listeleri güncelle
+          setNeighborhoods(newNeighborhoodsList);
+          setStreets(newStreetsList);
+
+          // Sonra seçili değerleri güncelle
+          setFormData(prev => ({
+              ...prev,
+              district: matchedDistrict,
+              neighborhood: matchedNeighborhood,
+              street: addr.street || prev.street,
+          }));
+      }
   };
 
   const handleAIDescription = async () => {
@@ -342,7 +417,10 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
                 <div className="flex-1 space-y-4">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
-                            <label className="block text-xs font-medium text-slate-500 mb-1">İlçe</label>
+                            <label className="block text-xs font-medium text-slate-500 mb-1 flex justify-between">
+                                İlçe
+                                {formData.location && !formData.district && <span className="text-[10px] text-blue-500 animate-pulse">Konumdan bekleniyor...</span>}
+                            </label>
                             <select
                                 required
                                 name="district"
@@ -370,22 +448,31 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
                         </div>
                          <div>
                             <label className="block text-xs font-medium text-slate-500 mb-1">Sokak / Cadde</label>
-                            <select
-                                required
-                                name="street"
-                                value={formData.street}
-                                onChange={handleChange}
-                                disabled={!formData.neighborhood}
-                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100"
-                            >
-                                <option value="">Seçiniz</option>
-                                {streets.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                            <div className="relative">
+                                {/* Eğer listede varsa select, yoksa input gibi davranmalı ama şimdilik hibrit çözüm */}
+                                <input 
+                                    list="streets-list"
+                                    name="street"
+                                    value={formData.street}
+                                    onChange={handleChange}
+                                    disabled={!formData.neighborhood}
+                                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100"
+                                    placeholder={streets.length > 0 ? "Seçiniz veya yazınız" : "Yazınız"}
+                                />
+                                <datalist id="streets-list">
+                                    {streets.map(s => <option key={s} value={s} />)}
+                                </datalist>
+                            </div>
                         </div>
                     </div>
                     
                     <div className="bg-white border border-slate-200 p-3 rounded-lg">
-                        <div className="text-xs font-semibold text-slate-400 mb-2">SEÇİLEN KOORDİNATLAR</div>
+                        <div className="text-xs font-semibold text-slate-400 mb-2 flex items-center justify-between">
+                            <span>SEÇİLEN KOORDİNATLAR</span>
+                            <span className="text-[10px] text-blue-500 flex items-center gap-1">
+                                <Wand2 size={10} /> Otomatik Adres Aktif
+                            </span>
+                        </div>
                         <div className="grid grid-cols-2 gap-2 text-sm">
                              <div>
                                  <span className="text-slate-500">Enlem:</span> <span className="font-mono text-slate-800">{formData.location?.lat.toFixed(6) || '-'}</span>
@@ -403,11 +490,12 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, onSave, onCancel }) 
                 </div>
 
                 {/* Map Picker */}
-                <div className="flex-1 min-h-[300px] border border-slate-300 rounded-lg overflow-hidden shadow-inner">
+                <div className="flex-1 min-h-[300px] border border-slate-300 rounded-lg overflow-hidden shadow-inner relative">
                     <LocationPicker 
                         initialLat={formData.location?.lat}
                         initialLng={formData.location?.lng}
                         onLocationSelect={(lat, lng) => setFormData(prev => ({...prev, location: { lat, lng }}))}
+                        onAddressFound={handleAddressFound}
                     />
                 </div>
             </div>

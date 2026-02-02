@@ -1,4 +1,4 @@
-import * as firebaseAppModule from "firebase/app";
+import * as firebase from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
 // Sağladığınız doğru bilgileri buraya ekledim.
@@ -20,7 +20,7 @@ let dbInstance;
 
 if (isConfigured) {
   try {
-    app = firebaseAppModule.initializeApp(firebaseConfig);
+    app = firebase.initializeApp(firebaseConfig);
     dbInstance = getFirestore(app);
     console.log("Firebase başarıyla başlatıldı.");
   } catch (error) {
