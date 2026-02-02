@@ -1,90 +1,54 @@
-
 import { TaxiStand, ChangeLog } from '../types';
+import { db } from './firebaseConfig';
+import { 
+  collection, 
+  getDocs, 
+  setDoc, 
+  deleteDoc, 
+  doc 
+} from 'firebase/firestore';
 
-// Sunucu adresi dinamik olarak belirlenir.
-const API_PORT = 3001;
-const STORAGE_KEY = 'taxi_stands_data';
-
-const getApiUrl = () => {
-  const hostname = window.location.hostname || 'localhost';
-  return `http://${hostname}:${API_PORT}/api/stands`;
-};
-
-// --- LocalStorage Yardımcıları ---
-// Backend sunucusu çalışmadığında veya static hosting (Vercel/Netlify) 
-// kullanıldığında verileri tarayıcı hafızasında tutar.
-const getLocalData = (): TaxiStand[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (e) {
-    console.error("LocalStorage okuma hatası", e);
-    return [];
-  }
-};
-
-const saveLocalData = (data: TaxiStand[]) => {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error("LocalStorage yazma hatası", e);
-  }
-};
+// Collection Reference
+const COLLECTION_NAME = 'taxi_stands';
 
 export const getStands = async (): Promise<TaxiStand[]> => {
   try {
-    // 1. Önce gerçek sunucuya (server.js) ulaşmayı dene
-    const response = await fetch(getApiUrl());
-    if (!response.ok) throw new Error('API yanıt vermedi');
-    return await response.json();
+    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const stands: TaxiStand[] = [];
+    querySnapshot.forEach((doc) => {
+      stands.push(doc.data() as TaxiStand);
+    });
+    return stands;
   } catch (error) {
-    // 2. Sunucu yoksa LocalStorage kullan (Fallback)
-    console.warn("Sunucuya ulaşılamadı, tarayıcı hafızası kullanılıyor.");
-    return getLocalData();
+    console.error("Firebase verisi çekilemedi:", error);
+    // Hata durumunda boş dizi dön veya kullanıcıyı uyar
+    return [];
   }
 };
 
 export const saveStand = async (stand: TaxiStand): Promise<void> => {
   try {
-    // 1. Sunucuya kaydetmeyi dene
-    await fetch(getApiUrl(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(stand),
-    });
+    // Firestore'da 'doc' fonksiyonu ID ile belirli bir dokümanı referans alır.
+    // Eğer ID varsa üzerine yazar (update), yoksa oluşturur.
+    // TaxiStand nesnesinde ID zaten string olarak var.
+    const standRef = doc(db, COLLECTION_NAME, stand.id);
+    await setDoc(standRef, stand);
   } catch (error) {
-    // 2. Sunucu yoksa LocalStorage'a kaydet
-    console.warn("Sunucuya ulaşılamadı, tarayıcı hafızasına kaydediliyor.");
-    const stands = getLocalData();
-    const index = stands.findIndex(s => s.id === stand.id);
-    
-    if (index >= 0) {
-      stands[index] = stand;
-    } else {
-      stands.push(stand);
-    }
-    
-    saveLocalData(stands);
+    console.error("Firebase'e kayıt yapılamadı:", error);
+    throw error;
   }
 };
 
 export const deleteStand = async (id: string): Promise<void> => {
   try {
-    // 1. Sunucudan silmeyi dene
-    await fetch(`${getApiUrl()}/${id}`, {
-      method: 'DELETE',
-    });
+    await deleteDoc(doc(db, COLLECTION_NAME, id));
   } catch (error) {
-    // 2. Sunucu yoksa LocalStorage'dan sil
-    console.warn("Sunucuya ulaşılamadı, tarayıcı hafızasından siliniyor.");
-    let stands = getLocalData();
-    stands = stands.filter(s => s.id !== id);
-    saveLocalData(stands);
+    console.error("Firebase'den silinemedi:", error);
+    throw error;
   }
 };
 
+// Change Log Helper (Logic remains the same, pure utility)
 export const generateChanges = (oldStand: TaxiStand, newStand: TaxiStand): ChangeLog[] => {
   const changes: ChangeLog[] = [];
   
@@ -119,7 +83,7 @@ export const generateChanges = (oldStand: TaxiStand, newStand: TaxiStand): Chang
         fieldName: field,
         oldValue: oldVal || '(Boş)',
         newValue: newVal || '(Boş)',
-        changedBy: 'Admin', // İleride kullanıcı adı eklenebilir
+        changedBy: 'Admin',
         relatedUkomeNo: newStand.ukomeDecisionNo,
         relatedUkomeDate: newStand.ukomeDate
       });

@@ -12,11 +12,10 @@
     </style>
     <script>
       // Tarayıcıda 'process' hatasını önlemek için polyfill
-      // Bu kod, kütüphanelerin çalışması için gerekli ortamı simüle eder
       window.process = {
         env: {
           NODE_ENV: 'development',
-          API_KEY: '' // API anahtarı gerekirse buraya eklenebilir
+          API_KEY: '' 
         }
       };
     </script>
@@ -35,7 +34,10 @@
     "cors": "https://esm.sh/cors@^2.8.6",
     "fs": "https://esm.sh/fs@^0.0.1-security",
     "url": "https://esm.sh/url@^0.11.4",
-    "leaflet": "https://esm.sh/leaflet@1.9.4"
+    "leaflet": "https://esm.sh/leaflet@1.9.4",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/"
   }
 }
 </script>
