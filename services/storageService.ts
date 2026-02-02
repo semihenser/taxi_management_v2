@@ -12,43 +12,28 @@ import {
 const COLLECTION_NAME = 'taxi_stands';
 
 export const getStands = async (): Promise<TaxiStand[]> => {
-  try {
-    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-    const stands: TaxiStand[] = [];
-    querySnapshot.forEach((doc) => {
-      stands.push(doc.data() as TaxiStand);
-    });
-    return stands;
-  } catch (error) {
-    console.error("Firebase verisi çekilemedi:", error);
-    // Hata durumunda boş dizi dön veya kullanıcıyı uyar
-    return [];
-  }
+  // Hataları burada yakalamıyoruz, App.tsx'in yakalamasına izin veriyoruz.
+  // Böylece kullanıcı ekranda hatayı görebilir.
+  const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
+  const stands: TaxiStand[] = [];
+  querySnapshot.forEach((doc) => {
+    stands.push(doc.data() as TaxiStand);
+  });
+  return stands;
 };
 
 export const saveStand = async (stand: TaxiStand): Promise<void> => {
-  try {
-    // Firestore'da 'doc' fonksiyonu ID ile belirli bir dokümanı referans alır.
-    // Eğer ID varsa üzerine yazar (update), yoksa oluşturur.
-    // TaxiStand nesnesinde ID zaten string olarak var.
-    const standRef = doc(db, COLLECTION_NAME, stand.id);
-    await setDoc(standRef, stand);
-  } catch (error) {
-    console.error("Firebase'e kayıt yapılamadı:", error);
-    throw error;
-  }
+  // Firestore'da 'doc' fonksiyonu ID ile belirli bir dokümanı referans alır.
+  // Eğer ID varsa üzerine yazar (update), yoksa oluşturur.
+  const standRef = doc(db, COLLECTION_NAME, stand.id);
+  await setDoc(standRef, stand);
 };
 
 export const deleteStand = async (id: string): Promise<void> => {
-  try {
-    await deleteDoc(doc(db, COLLECTION_NAME, id));
-  } catch (error) {
-    console.error("Firebase'den silinemedi:", error);
-    throw error;
-  }
+  await deleteDoc(doc(db, COLLECTION_NAME, id));
 };
 
-// Change Log Helper (Logic remains the same, pure utility)
+// Change Log Helper
 export const generateChanges = (oldStand: TaxiStand, newStand: TaxiStand): ChangeLog[] => {
   const changes: ChangeLog[] = [];
   

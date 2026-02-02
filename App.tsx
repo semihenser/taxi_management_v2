@@ -15,7 +15,8 @@ import {
   Pencil,
   Loader2,
   Map,
-  List
+  List,
+  AlertTriangle
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   const [initialHistoryUkome, setInitialHistoryUkome] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // States for Revision Modal
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
@@ -43,9 +45,24 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     setLoading(true);
-    const data = await getStands();
-    setStands(data);
-    setLoading(false);
+    setError(null);
+    try {
+      const data = await getStands();
+      setStands(data);
+    } catch (err: any) {
+      console.error(err);
+      let errorMessage = "Veritabanına bağlanılamadı.";
+      if (err.message && err.message.includes("services/firebaseConfig.ts")) {
+        errorMessage = err.message;
+      } else if (err.code === "permission-denied") {
+        errorMessage = "Yetki hatası: Firestore kuralları erişimi engelliyor. (Test modunu açtığınızdan emin olun)";
+      } else {
+        errorMessage = "Veritabanı bağlantısı kurulamadı. Lütfen 'services/firebaseConfig.ts' dosyasındaki ayarların doğru olduğundan emin olun.";
+      }
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreate = () => {
@@ -95,37 +112,45 @@ const App: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     if (confirm('Bu durağı silmek istediğinize emin misiniz?')) {
-      await deleteStand(id);
-      await refreshData();
-      if (view === 'VIEW') setView('LIST');
+      try {
+        await deleteStand(id);
+        await refreshData();
+        if (view === 'VIEW') setView('LIST');
+      } catch (err) {
+        alert("Silme işlemi başarısız oldu.");
+      }
     }
   };
 
   const handleSave = async (stand: TaxiStand) => {
-    const originalStand = stands.find(s => s.id === stand.id);
+    try {
+      const originalStand = stands.find(s => s.id === stand.id);
 
-    if (originalStand) {
-      let updatedHistory = originalStand.history;
+      if (originalStand) {
+        let updatedHistory = originalStand.history;
 
-      // Sadece REVISION modundaysa değişiklik günlüğü oluştur
-      if (formMode === 'REVISION') {
-        const changes = generateChanges(originalStand, stand);
-        updatedHistory = [...originalStand.history, ...changes];
+        // Sadece REVISION modundaysa değişiklik günlüğü oluştur
+        if (formMode === 'REVISION') {
+          const changes = generateChanges(originalStand, stand);
+          updatedHistory = [...originalStand.history, ...changes];
+        }
+        
+        const updatedStand: TaxiStand = {
+          ...stand,
+          history: updatedHistory
+        };
+        
+        await saveStand(updatedStand);
+      } else {
+        // New Stand
+        await saveStand(stand);
       }
       
-      const updatedStand: TaxiStand = {
-        ...stand,
-        history: updatedHistory
-      };
-      
-      await saveStand(updatedStand);
-    } else {
-      // New Stand
-      await saveStand(stand);
+      await refreshData();
+      setView('LIST');
+    } catch (err) {
+      alert("Kayıt işlemi başarısız oldu. Lütfen veritabanı ayarlarını kontrol edin.");
     }
-    
-    await refreshData();
-    setView('LIST');
   };
 
   const handleViewHistory = (stand: TaxiStand, ukomeNo: string | null = null) => {
@@ -161,6 +186,16 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+             <AlertTriangle className="shrink-0 mt-0.5" size={20} />
+             <div>
+               <h3 className="font-bold">Bağlantı Hatası</h3>
+               <p className="text-sm">{error}</p>
+             </div>
+          </div>
+        )}
         
         {(view === 'LIST' || view === 'MAP') && (
           <div className="space-y-6">
@@ -211,7 +246,6 @@ const App: React.FC = () => {
                 <div className="flex flex-col items-center justify-center h-64 text-slate-500">
                   <Loader2 size={32} className="animate-spin mb-2 text-blue-600" />
                   <p>Veriler Yükleniyor...</p>
-                  <p className="text-xs text-slate-400 mt-1">Sunucunun (npm run server) açık olduğundan emin olun.</p>
                 </div>
               ) : (
                 <>
@@ -317,7 +351,7 @@ const App: React.FC = () => {
                           ) : (
                             <tr>
                               <td colSpan={6} className="p-8 text-center text-slate-500">
-                                Kayıt bulunamadı.
+                                {error ? 'Veriler yüklenirken hata oluştu.' : 'Kayıt bulunamadı.'}
                               </td>
                             </tr>
                           )}
