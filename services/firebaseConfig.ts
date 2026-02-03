@@ -1,19 +1,21 @@
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+/// <reference types="vite/client" />
+
+import { initializeApp, getApps } from "firebase/app";
+import type { FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 
-// Konfigürasyon öncelikle Environment Variable'lardan (VITE_...) okunur.
-// Eğer tanımlı değilse, geliştirme ortamı için aşağıdaki hardcoded değerler kullanılır.
+// Konfigürasyon Environment Variable'lardan (VITE_...) okunur.
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "AIzaSyCAdwbA5u0oLe0m6oKryKwHx1XBiDEWnrk",
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "izbb-taxi-management.firebaseapp.com",
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "izbb-taxi-management",
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "izbb-taxi-management.firebasestorage.app",
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "956551883987",
-  appId: process.env.VITE_FIREBASE_APP_ID || "1:956551883987:web:3f6bc14aad0c026f357826",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Basit kontrol
-export const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "BURAYA_API_KEY_GELECEK";
+export const isConfigured = !!firebaseConfig.apiKey;
 
 let app: FirebaseApp | undefined;
 let dbInstance: Firestore | undefined;
@@ -34,7 +36,7 @@ if (isConfigured) {
     console.error("Firebase başlatma hatası:", error);
   }
 } else {
-  console.warn("Firebase yapılandırması yapılmamış.");
+  console.warn("Firebase yapılandırması yapılmamış. Lütfen .env dosyasını oluşturun.");
 }
 
 export const db = dbInstance;

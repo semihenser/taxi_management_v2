@@ -1,20 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize Gemini
-// Note: In a real production app, ensure this is behind a proxy or env variable is handled securely.
-const apiKey = process.env.API_KEY || ''; 
-let ai: GoogleGenAI | null = null;
-
-if (apiKey) {
-  ai = new GoogleGenAI({ apiKey });
-}
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const enhanceAddressWithAI = async (rawAddress: string, district: string): Promise<string> => {
-  if (!ai) {
-    console.warn("API Key missing for Gemini");
-    return rawAddress;
-  }
-
   try {
     const prompt = `
       Sen profesyonel bir veri düzenleme asistanısın.
@@ -38,8 +26,6 @@ export const enhanceAddressWithAI = async (rawAddress: string, district: string)
 };
 
 export const generateDescriptionWithAI = async (standName: string, capacity: number, district: string): Promise<string> => {
-    if (!ai) return "";
-
     try {
         const prompt = `${district} ilçesindeki ${standName} isimli, ${capacity} araç kapasiteli taksi durağı için kısa, resmi bir tanıtım/bilgi notu yaz. 1 cümleyi geçmesin.`;
         
