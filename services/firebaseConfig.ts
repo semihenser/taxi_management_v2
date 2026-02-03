@@ -1,7 +1,14 @@
 /// <reference types="vite/client" />
 
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import * as firebaseAppModule from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
+
+// Workaround for TypeScript errors where firebase/app exports are not detected correctly.
+// We cast the module to any to access the named exports that exist at runtime in Firebase v9+.
+const { initializeApp, getApps } = firebaseAppModule as any;
+
+// Define a local type alias for FirebaseApp to avoid import errors
+type FirebaseApp = any;
 
 // Konfigürasyon Environment Variable'lardan (VITE_...) okunur.
 const firebaseConfig = {
@@ -22,10 +29,14 @@ let dbInstance: Firestore | undefined;
 if (isConfigured) {
   try {
     // Uygulama daha önce başlatılmış mı kontrol et (Hot Reload hatalarını önler)
-    const apps = getApps();
+    const apps = getApps ? getApps() : [];
     
     if (apps.length === 0) {
-        app = initializeApp(firebaseConfig);
+        if (initializeApp) {
+            app = initializeApp(firebaseConfig);
+        } else {
+            console.error("Firebase initializeApp bulunamadı.");
+        }
     } else {
         app = apps[0];
     }

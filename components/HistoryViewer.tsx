@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { TaxiStand, ChangeLog } from '../types';
-import { X, Calendar, User, FileText, ArrowLeft, Clock, MapPin, Car, Phone, Info } from 'lucide-react';
+import { X, Calendar, User, FileText, ArrowLeft, Clock, MapPin, Car, Phone, Info, Building2, ShieldCheck, Hash } from 'lucide-react';
 
 interface HistoryViewerProps {
   stand: TaxiStand;
@@ -24,6 +24,8 @@ const reconstructStand = (currentStand: TaxiStand, targetUkomeNo: string | null)
   // Hedeflenen UKOME kararını bul
   const targetLogs = sortedHistory.filter(h => h.relatedUkomeNo === targetUkomeNo);
   
+  // Eğer hedef karar loglarda yoksa (örn: manuel giriş öncesi), en güncel hali döndürmek yerine
+  // mantıken o tarihe gitmeye çalışırız ama burada basitlik adına current dönüyoruz.
   if (targetLogs.length === 0) return currentStand;
 
   // Hedef grubun en son işlenen kaydının zamanı (Bu kararın sisteme girildiği an)
@@ -51,10 +53,14 @@ const reconstructStand = (currentStand: TaxiStand, targetUkomeNo: string | null)
     }
   });
   
+  // Snapshot'ın UKOME bilgilerini de o anki duruma eşitle (Geri alınan loglar arasında ukomeDecisionNo varsa zaten düzelmiştir ama garanti olsun)
+  // Not: Loglarda ukomeDecisionNo değişikliği varsa yukarıdaki loop bunu halleder.
+  
   return snapshot;
 };
 
 const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, onClose }) => {
+  // Başlangıçta mutlaka bir UKOME no seçili gelmeli, yoksa listenin ilk elemanını seçeriz.
   const [selectedUkomeNo, setSelectedUkomeNo] = useState<string | null>(initialUkomeNo || null);
 
   // Geçmişi UKOME kararlarına göre grupla
@@ -77,7 +83,7 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
           no: key,
           date: log.relatedUkomeDate || '-',
           timestamp: log.timestamp,
-          summary: '', // Birazdan dolduracağız
+          summary: '', 
           logs: [],
           user: log.changedBy
         };
@@ -96,6 +102,13 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
     );
   }, [stand.history]);
 
+  // Eğer initialUkomeNo yoksa ve liste doluysa, en üsttekini (en günceli) seç
+  useEffect(() => {
+    if (!selectedUkomeNo && groupedHistory.length > 0) {
+        setSelectedUkomeNo(groupedHistory[0].no);
+    }
+  }, [groupedHistory, selectedUkomeNo]);
+
   // Seçili anın görüntüsü
   const snapshotStand = useMemo(() => {
     return reconstructStand(stand, selectedUkomeNo);
@@ -110,10 +123,15 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
       case 'ukomeDate': return 'Karar Tarihi';
       case 'address': return 'Açık Adres';
       case 'district': return 'İlçe';
+      case 'neighborhood': return 'Mahalle';
+      case 'street': return 'Sokak';
       case 'capacity': return 'Kapasite';
       case 'plates': return 'Plakalar';
       case 'status': return 'Durum';
       case 'name': return 'Durak Adı';
+      case 'phone': return 'Telefon';
+      case 'officeType': return 'Yazıhane Tipi';
+      case 'responsibility': return 'Sorumluluk';
       case 'notes': return 'Notlar';
       default: return field;
     }
@@ -126,39 +144,19 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
         onClick={onClose}
       ></div>
 
-      <div className="relative w-full max-w-4xl bg-white h-full shadow-2xl flex flex-col md:flex-row animate-in slide-in-from-right duration-300">
+      <div className="relative w-full max-w-5xl bg-white h-full shadow-2xl flex flex-col md:flex-row animate-in slide-in-from-right duration-300">
         
         {/* SOL PANEL: Karar Listesi */}
-        <div className={`w-full md:w-1/3 bg-slate-50 border-r border-slate-200 flex flex-col h-full ${selectedUkomeNo ? 'hidden md:flex' : 'flex'}`}>
+        <div className="w-full md:w-1/3 bg-slate-50 border-r border-slate-200 flex flex-col h-full">
           <div className="p-5 border-b border-slate-200 bg-white">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
               <Clock className="text-blue-600" size={20} />
-              Karar Geçmişi
+              İşlem Geçmişi
             </h2>
-            <p className="text-xs text-slate-500 mt-1">Görüntülemek için bir işlem seçin.</p>
+            <p className="text-xs text-slate-500 mt-1">İncelemek istediğiniz revizyonu seçin.</p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3">
-             {/* En Güncel Hal Kartı */}
-             <div 
-                onClick={() => setSelectedUkomeNo(null)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  selectedUkomeNo === null 
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-100' 
-                    : 'bg-white border-slate-200 hover:border-blue-300 text-slate-700'
-                }`}
-             >
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-bold text-sm">Mevcut Durum</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedUkomeNo === null ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                    ŞİMDİ
-                  </span>
-                </div>
-                <div className={`text-xs ${selectedUkomeNo === null ? 'text-blue-100' : 'text-slate-500'}`}>
-                  Durağın şu anki güncel hali.
-                </div>
-             </div>
-
              {groupedHistory.map((group) => (
                <div 
                  key={group.no}
@@ -173,7 +171,7 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
                     <div className="flex items-center gap-2">
                        <FileText size={16} className={selectedUkomeNo === group.no ? 'text-blue-600' : 'text-slate-400'} />
                        <span className="font-bold text-slate-800 text-sm">
-                         {group.no === 'Manuel Düzenleme' ? 'Düzenleme' : group.no}
+                         {group.no === 'Manuel Düzenleme' ? 'Manuel Düzeltme' : group.no}
                        </span>
                     </div>
                  </div>
@@ -189,32 +187,36 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
                  
                  {/* Değişen alan sayısı badge */}
                  <div className="absolute bottom-2 right-2 text-[10px] font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-md">
-                    {group.logs.length} Değişiklik
+                    {group.logs.length} İşlem
                  </div>
                </div>
              ))}
+             
+             {groupedHistory.length === 0 && (
+                <div className="p-4 text-center text-slate-400 text-sm">
+                    Kayıtlı geçmiş bulunamadı.
+                </div>
+             )}
           </div>
         </div>
 
         {/* SAĞ PANEL: Detay / Snapshot Görüntüleme */}
-        <div className={`w-full md:w-2/3 bg-white flex flex-col h-full ${!selectedUkomeNo ? 'hidden md:flex' : 'flex'}`}>
+        <div className="w-full md:w-2/3 bg-white flex flex-col h-full">
            {/* Header */}
-           <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+           <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white z-10">
               <div className="flex items-center gap-3">
                  <button 
-                   onClick={() => setSelectedUkomeNo(null)}
+                   onClick={onClose}
                    className="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-full"
                  >
                    <ArrowLeft size={20} />
                  </button>
                  <div>
-                    <h3 className="font-bold text-slate-800 text-lg">
-                       {selectedUkomeNo ? `${selectedUkomeNo} Kararı Sonrası` : 'Güncel Durum'}
+                    <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                       {selectedUkomeNo === 'Manuel Düzenleme' ? 'Manuel Düzeltme Kaydı' : `UKOME Karar No: ${selectedUkomeNo}`}
                     </h3>
                     <p className="text-xs text-slate-500">
-                       {selectedUkomeNo 
-                          ? 'Durağın bu karar uygulandıktan sonraki görünümü.' 
-                          : 'Durağın sistemdeki en son hali.'}
+                       Bu işlem sonrasında durağın sistemdeki görünümü aşağıdaki gibidir.
                     </p>
                  </div>
               </div>
@@ -224,109 +226,159 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
            </div>
 
            {/* Content - Snapshot Visualization */}
-           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+           <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
               
-              {/* Snapshot Card */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-                 <div className="bg-gradient-to-r from-slate-50 to-white px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-                    <div className="font-semibold text-slate-700 flex items-center gap-2">
-                       <Info size={18} className="text-blue-500" />
-                       Durak Bilgileri ({selectedUkomeNo ? 'Arşiv' : 'Güncel'})
+              {/* Snapshot Card - Full Details */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+                 <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+                    <div className="font-semibold text-slate-700 flex items-center gap-2 text-sm uppercase">
+                       <Info size={16} className="text-blue-600" />
+                       Durağın O Tarihteki Özellikleri
                     </div>
-                    {selectedUkomeNo && (
-                       <span className="text-[10px] uppercase font-bold text-white bg-orange-400 px-2 py-1 rounded">
-                          Geçmiş Kayıt
-                       </span>
-                    )}
+                    <span className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded shadow-sm">
+                        ARŞİV KAYDI
+                    </span>
                  </div>
                  
-                 <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="p-6">
+                    {/* Temel Bilgiler Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-8 mb-6">
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Durak Adı</label>
+                           <div className="text-sm font-bold text-slate-800">{snapshotStand.name}</div>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Durum</label>
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-bold rounded border ${
+                                snapshotStand.status === 'Aktif' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                            }`}>
+                                {snapshotStand.status}
+                            </span>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Yazıhane Tipi</label>
+                           <div className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                                <Building2 size={14} className="text-slate-400" />
+                                {snapshotStand.officeType}
+                           </div>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Telefon</label>
+                           <div className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                                <Phone size={14} className="text-slate-400" />
+                                {snapshotStand.phone || '-'}
+                           </div>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sorumluluk</label>
+                           <div className="text-sm font-medium text-slate-700 flex items-center gap-1">
+                                <ShieldCheck size={14} className="text-slate-400" />
+                                {snapshotStand.responsibility}
+                           </div>
+                        </div>
+                        <div>
+                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kapasite</label>
+                           <div className="text-sm font-bold text-blue-600">{snapshotStand.capacity} Araç</div>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 my-4"></div>
+
+                    {/* Konum Bilgileri */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 mb-6">
+                         <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">İlçe / Mahalle</label>
+                            <div className="text-sm font-medium text-slate-800">{snapshotStand.district} / {snapshotStand.neighborhood}</div>
+                         </div>
+                         <div>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sokak</label>
+                            <div className="text-sm font-medium text-slate-800">{snapshotStand.street || '-'}</div>
+                         </div>
+                         <div className="md:col-span-2">
+                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                                <MapPin size={12} /> Tam Açık Adres
+                             </label>
+                             <div className="text-sm text-slate-600 bg-slate-50 p-2.5 rounded border border-slate-200">
+                                {snapshotStand.address}
+                             </div>
+                         </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 my-4"></div>
+
+                    {/* Plakalar */}
                     <div>
-                       <label className="text-xs font-bold text-slate-400 uppercase">Durak Adı</label>
-                       <div className="text-lg font-bold text-slate-800 mt-1">{snapshotStand.name}</div>
-                    </div>
-                    <div>
-                       <label className="text-xs font-bold text-slate-400 uppercase">Durum</label>
-                       <div className="mt-1">
-                          <span className={`inline-flex px-2 py-1 text-xs font-bold rounded border ${
-                              snapshotStand.status === 'Aktif' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
-                          }`}>
-                              {snapshotStand.status}
-                          </span>
-                       </div>
-                    </div>
-                    <div>
-                       <label className="text-xs font-bold text-slate-400 uppercase">İlçe / Mahalle</label>
-                       <div className="text-slate-700 mt-1 font-medium">{snapshotStand.district} / {snapshotStand.neighborhood}</div>
-                    </div>
-                     <div>
-                       <label className="text-xs font-bold text-slate-400 uppercase">Kapasite</label>
-                       <div className="text-slate-700 mt-1 font-medium">{snapshotStand.capacity} Araç</div>
-                    </div>
-                    <div className="md:col-span-2">
-                       <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <MapPin size={12} /> Adres
-                       </label>
-                       <div className="text-slate-600 mt-1 text-sm bg-slate-50 p-2 rounded border border-slate-100">
-                          {snapshotStand.address}
-                       </div>
-                    </div>
-                    <div className="md:col-span-2">
-                       <label className="text-xs font-bold text-slate-400 uppercase flex items-center gap-1 mb-2">
-                          <Car size={12} /> Kayıtlı Plakalar ({snapshotStand.plates?.length || 0})
+                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 flex items-center gap-1">
+                          <Car size={12} /> O Tarihte Kayıtlı Plakalar ({snapshotStand.plates?.length || 0})
                        </label>
                        <div className="flex flex-wrap gap-2">
                           {snapshotStand.plates && snapshotStand.plates.length > 0 ? (
                              snapshotStand.plates.map((p, i) => (
-                                <span key={i} className="text-xs font-mono font-bold bg-yellow-50 text-slate-800 border border-yellow-200 px-2 py-1 rounded">
+                                <span key={i} className="text-xs font-mono font-bold bg-yellow-50 text-slate-800 border border-yellow-200 px-2 py-1 rounded shadow-sm">
                                    {p}
                                 </span>
                              ))
                           ) : (
-                             <span className="text-xs text-slate-400 italic">Plaka kaydı yok</span>
+                             <span className="text-xs text-slate-400 italic">Kayıtlı plaka yok</span>
                           )}
                        </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 my-4"></div>
+
+                    {/* UKOME Detayı */}
+                    <div>
+                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
+                             <Hash size={12} /> UKOME Karar Bilgisi (Snapshot)
+                         </label>
+                         <div className="bg-blue-50/50 p-3 rounded border border-blue-100 grid grid-cols-2 gap-4">
+                             <div>
+                                 <span className="text-[10px] text-blue-400 block">Karar No</span>
+                                 <span className="text-sm font-semibold text-blue-900">{snapshotStand.ukomeDecisionNo || '-'}</span>
+                             </div>
+                             <div>
+                                 <span className="text-[10px] text-blue-400 block">Karar Tarihi</span>
+                                 <span className="text-sm font-semibold text-blue-900">{snapshotStand.ukomeDate || '-'}</span>
+                             </div>
+                             <div className="col-span-2">
+                                 <span className="text-[10px] text-blue-400 block">Özet</span>
+                                 <span className="text-sm text-blue-800">{snapshotStand.ukomeSummary || '-'}</span>
+                             </div>
+                         </div>
                     </div>
                  </div>
               </div>
 
-              {/* Changes Log for Selected Decision */}
+              {/* Changes Log Table */}
               {selectedGroup && (
                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="bg-slate-50 px-6 py-3 border-b border-slate-200">
-                       <h4 className="font-semibold text-slate-700 text-sm">Bu Kararda Yapılan Değişiklikler</h4>
+                       <h4 className="font-bold text-slate-700 text-xs uppercase tracking-wider">Bu Karar İle Yapılan Değişiklikler</h4>
                     </div>
                     <table className="w-full text-left text-sm">
                        <thead>
-                          <tr className="border-b border-slate-100 text-xs text-slate-500">
-                             <th className="px-6 py-2 font-medium">Alan</th>
+                          <tr className="border-b border-slate-100 text-xs text-slate-500 bg-slate-50/50">
+                             <th className="px-6 py-2 font-medium">Değişen Alan</th>
                              <th className="px-6 py-2 font-medium">Eski Değer</th>
                              <th className="px-6 py-2 font-medium">Yeni Değer</th>
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-slate-50">
                           {selectedGroup.logs.map((log) => (
-                             <tr key={log.id}>
+                             <tr key={log.id} className="hover:bg-slate-50/50">
                                 <td className="px-6 py-3 font-medium text-slate-700">
                                    {getFieldLabel(log.fieldName)}
                                 </td>
-                                <td className="px-6 py-3 text-red-500 text-xs opacity-70">
+                                <td className="px-6 py-3 text-red-500 text-xs opacity-70 break-all max-w-xs">
                                    {log.oldValue}
                                 </td>
-                                <td className="px-6 py-3 text-green-600 font-bold text-xs">
+                                <td className="px-6 py-3 text-green-600 font-bold text-xs break-all max-w-xs">
                                    {log.newValue}
                                 </td>
                              </tr>
                           ))}
                        </tbody>
                     </table>
-                 </div>
-              )}
-
-              {selectedUkomeNo === null && (
-                 <div className="flex flex-col items-center justify-center text-center p-8 text-slate-400">
-                    <Clock size={48} className="mb-4 text-slate-200" />
-                    <p>Geçmişte durağın nasıl göründüğünü incelemek için<br/>sol menüden bir UKOME kararı seçin.</p>
                  </div>
               )}
            </div>

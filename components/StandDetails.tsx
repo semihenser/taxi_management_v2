@@ -163,7 +163,7 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
                 </div>
             </div>
 
-           {/* History Table (Simplified) */}
+           {/* History Table (Updated: Clickable Rows, No Date Column) */}
            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <div className="flex items-center gap-4">
@@ -180,11 +180,10 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-3 font-semibold text-slate-600">İşlem Tarihi</th>
                                 <th className="px-6 py-3 font-semibold text-slate-600">UKOME Karar No</th>
                                 <th className="px-6 py-3 font-semibold text-slate-600">Karar Tarihi</th>
                                 <th className="px-6 py-3 font-semibold text-slate-600">Açıklama</th>
-                                <th className="px-6 py-3 font-semibold text-slate-600 text-right">Detay</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600 text-right">Görüntüle</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -194,12 +193,14 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
                                 const summaryText = summaryLog ? summaryLog.newValue : (group.changes.length > 0 ? '-' : 'Değişiklik Yok');
                                 
                                 return (
-                                    <tr key={group.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">
-                                            {new Date(group.timestamp).toLocaleDateString('tr-TR')}
-                                        </td>
+                                    <tr 
+                                        key={group.id} 
+                                        onClick={() => onViewHistory(group.ukomeNo)}
+                                        className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                                        title="Bu kararın detaylarını ve durak üzerindeki etkisini görmek için tıklayın"
+                                    >
                                         <td className="px-6 py-4 font-bold text-slate-800">
-                                            {group.ukomeNo || 'Manuel'}
+                                            {group.ukomeNo || 'Manuel Düzenleme'}
                                         </td>
                                         <td className="px-6 py-4 text-slate-600">
                                             {group.ukomeDate ? new Date(group.ukomeDate).toLocaleDateString('tr-TR') : '-'}
@@ -208,12 +209,10 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
                                             {summaryText}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button 
-                                                onClick={() => onViewHistory(group.ukomeNo)}
-                                                className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md hover:bg-blue-100 font-medium transition-colors border border-blue-100"
-                                            >
-                                                İncele
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2 text-blue-600 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                 <span className="text-xs font-semibold">İncele</span>
+                                                 <ArrowRight size={16} />
+                                            </div>
                                         </td>
                                     </tr>
                                 );
