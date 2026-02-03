@@ -185,7 +185,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
     
     // Validasyonlar
     if (!transferUkomeNo.trim()) {
-        alert("Plaka transferi resmi bir işlem olduğu için UKOME Karar Numarası girilmesi zorunludur.");
+        alert("Plaka işlemleri resmi bir işlem olduğu için UKOME Karar Numarası girilmesi zorunludur.");
         return;
     }
 
@@ -194,7 +194,11 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         return;
     }
 
-    if (!confirm(`${searchedPlate} plakasını ${currentStand ? currentStand.name + ' durağından alıp ' : ''} seçilen durağa transfer etmek istiyor musunuz?`)) {
+    const confirmMessage = currentStand 
+        ? `${searchedPlate} plakasını ${currentStand.name} durağından alıp seçilen durağa transfer etmek istiyor musunuz?`
+        : `${searchedPlate} plakasını seçilen durağa eklemek (ilk atama) istiyor musunuz?`;
+
+    if (!confirm(confirmMessage)) {
         return;
     }
 
@@ -242,12 +246,15 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         await saveStand(updatedTargetStand);
 
         await onRefresh();
-        setSuccessMessage(`${searchedPlate} başarıyla ${targetStand.name} durağına taşındı. (Karar: ${transferUkomeNo})`);
+        
+        const actionText = currentStand ? "başarıyla taşındı" : "başarıyla eklendi";
+        setSuccessMessage(`${searchedPlate} ${targetStand.name} durağına ${actionText}. (Karar: ${transferUkomeNo})`);
+        
         setTargetStandId('');
         setTransferUkomeNo('');
     } catch (error) {
         console.error(error);
-        alert("Transfer sırasında hata oluştu.");
+        alert("İşlem sırasında hata oluştu.");
     } finally {
         setIsSubmitting(false);
     }
@@ -352,7 +359,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                          <div className="bg-purple-50 px-6 py-4 border-b border-purple-100">
                              <h3 className="font-semibold text-purple-900 flex items-center gap-2">
-                                 <ArrowRightLeft size={18} /> Durak Değişikliği / Transfer
+                                 <ArrowRightLeft size={18} /> Durağa Ekle / Durağı Değiştir
                              </h3>
                          </div>
                          <div className="p-6">
@@ -367,7 +374,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                                  {/* UKOME Bilgileri Alanı */}
                                  <div className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm">
                                     <h4 className="text-xs font-bold text-purple-800 uppercase mb-3 flex items-center gap-1">
-                                        <FileText size={12} /> Transfer Dayanağı (UKOME)
+                                        <FileText size={12} /> İşlem Dayanağı (UKOME)
                                     </h4>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
@@ -393,7 +400,9 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                                  </div>
 
                                  <div>
-                                     <label className="block text-sm font-medium text-slate-700 mb-1">Yeni Durak Seçin</label>
+                                     <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        {currentStand ? 'Yeni Durak Seçin (Transfer)' : 'Durağa Ekle (İlk Atama)'}
+                                     </label>
                                      <select
                                          value={targetStandId}
                                          onChange={(e) => setTargetStandId(e.target.value)}
@@ -415,7 +424,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                                      disabled={!targetStandId || isSubmitting}
                                      className="w-full py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                                  >
-                                     {isSubmitting ? 'İşleniyor...' : 'Transferi Tamamla'}
+                                     {isSubmitting ? 'İşleniyor...' : (currentStand ? 'Transferi Tamamla' : 'Durağa Ekle')}
                                  </button>
                              </div>
                          </div>

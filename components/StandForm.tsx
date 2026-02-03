@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TaxiStand, StandStatus } from '../types';
-import { Save, X, MapPin, Plus, Trash2, Car, Phone, FileText, Loader2, Sparkles, Wand2, AlertTriangle } from 'lucide-react';
+import { Save, X, MapPin, Phone, FileText, Loader2, Sparkles, Wand2, Car, Info } from 'lucide-react';
 import { generateDescriptionWithAI } from '../services/geminiService';
 import LocationPicker from './LocationPicker';
 
@@ -77,7 +77,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
     updatedAt: new Date().toISOString()
   });
 
-  const [currentPlate, setCurrentPlate] = useState('');
   const [loadingAI, setLoadingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -85,23 +84,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
   const [districts, setDistricts] = useState<string[]>(Object.keys(IZMIR_DATA));
   const [neighborhoods, setNeighborhoods] = useState<string[]>([]);
   const [streets, setStreets] = useState<string[]>([]);
-
-  // Collect all known plates from other stands for autocomplete and warnings
-  const otherPlatesMap = useMemo(() => {
-    const map = new Map<string, string>(); // Plate -> StandName
-    existingStands.forEach(stand => {
-        // Skip current stand being edited
-        if (initialData && stand.id === initialData.id) return;
-        if (!stand.plates) return;
-        
-        stand.plates.forEach(p => map.set(p, stand.name));
-    });
-    return map;
-  }, [existingStands, initialData]);
-
-  const sortedKnownPlates = useMemo(() => {
-     return Array.from(otherPlatesMap.keys()).sort();
-  }, [otherPlatesMap]);
 
   useEffect(() => {
     if (initialData) {
@@ -230,36 +212,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
     setLoadingAI(false);
   };
 
-  const handleAddPlate = () => {
-    if (!currentPlate.trim()) return;
-    const formattedPlate = currentPlate.toUpperCase().trim();
-    
-    if (formData.plates.includes(formattedPlate)) {
-        alert("Bu plaka zaten bu durakta ekli.");
-        return;
-    }
-
-    setFormData(prev => ({
-        ...prev,
-        plates: [...prev.plates, formattedPlate]
-    }));
-    setCurrentPlate('');
-  };
-
-  const handleRemovePlate = (plateToRemove: string) => {
-    setFormData(prev => ({
-        ...prev,
-        plates: prev.plates.filter(p => p !== plateToRemove)
-    }));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') {
-          e.preventDefault();
-          handleAddPlate();
-      }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -269,21 +221,17 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
         const fullAddress = `${formData.street || ''} ${formData.neighborhood || ''} Mah. ${formData.district || ''}/İZMİR`;
         await onSave({
           ...formData,
+          // Plakalar burada değiştirilmiyor, mevcut state neyse o gidiyor.
           address: fullAddress,
           capacity: Number(formData.capacity),
           updatedAt: new Date().toISOString()
         });
-        // Başarılı olursa parent component view'ı değiştireceği için unmount olur, 
-        // setIsSubmitting(false) yapmaya gerek yok.
     } catch (error) {
         console.error("Kaydetme hatası:", error);
         alert("Kayıt sırasında bir hata oluştu.");
         setIsSubmitting(false);
     }
   };
-
-  // Warning for the current input
-  const duplicateWarningStand = currentPlate && otherPlatesMap.get(currentPlate.toUpperCase().trim());
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 animate-in fade-in zoom-in duration-300">
@@ -525,66 +473,32 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
 
         </div>
 
-        {/* Plaka Yönetimi */}
+        {/* Plaka Yönetimi (Read-Only) */}
         <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h3 className="text-sm font-semibold text-yellow-900 mb-4 flex items-center gap-2">
-                <Car size={16} /> Durak Plaka Listesi
+            <h3 className="text-sm font-semibold text-yellow-900 mb-2 flex items-center gap-2">
+                <Car size={16} /> Durakta Çalışan Plakalar
                 <span className="ml-2 bg-yellow-200 text-yellow-800 text-xs px-2 py-0.5 rounded-full">
                     Toplam: {formData.plates.length}
                 </span>
             </h3>
             
-            <div className="flex flex-col gap-2 mb-4">
-                <div className="flex gap-2">
-                    <input
-                        list="known-plates"
-                        type="text"
-                        value={currentPlate}
-                        onChange={(e) => setCurrentPlate(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Plaka Giriniz veya Seçiniz (Örn: 35 T 1234)"
-                        className="flex-1 px-3 py-2 bg-white border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none uppercase font-mono"
-                    />
-                    <datalist id="known-plates">
-                        {sortedKnownPlates.map(p => (
-                            <option key={p} value={p}>{otherPlatesMap.get(p) || 'Bilinmiyor'} durağında</option>
-                        ))}
-                    </datalist>
-                    <button
-                        type="button"
-                        onClick={handleAddPlate}
-                        className="px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
-                    >
-                        <Plus size={18} /> Ekle
-                    </button>
-                </div>
-                {duplicateWarningStand && (
-                    <div className="flex items-center gap-1.5 text-xs text-orange-700 bg-orange-100 px-3 py-1.5 rounded-md border border-orange-200">
-                        <AlertTriangle size={12} className="shrink-0" />
-                        <span>
-                            <strong>Dikkat:</strong> Bu plaka şu anda <strong>{duplicateWarningStand}</strong> durağında kayıtlı görünüyor.
-                        </span>
-                    </div>
-                )}
+            <div className="bg-white/50 p-3 rounded-lg border border-yellow-100 mb-3 flex items-start gap-2 text-xs text-yellow-800">
+                <Info size={14} className="shrink-0 mt-0.5" />
+                <p>
+                    <strong>Bilgilendirme:</strong> Veri bütünlüğünü sağlamak amacıyla; duraklara plaka ekleme, çıkarma veya transfer işlemleri sadece ana menüdeki <strong>"Plaka Yönetim Paneli"</strong> üzerinden yapılmaktadır. Bu ekranda sadece mevcut bağlı plakalar görüntülenir.
+                </p>
             </div>
 
             {formData.plates.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                     {formData.plates.map((plate, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-white border border-slate-200 pl-3 pr-2 py-1.5 rounded-md shadow-sm">
+                        <div key={idx} className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm opacity-80">
                             <span className="font-mono font-bold text-slate-800 text-sm">{plate}</span>
-                            <button 
-                                type="button"
-                                onClick={() => handleRemovePlate(plate)}
-                                className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-1 rounded transition-colors"
-                            >
-                                <X size={14} />
-                            </button>
                         </div>
                     ))}
                 </div>
             ) : (
-                <p className="text-xs text-yellow-700/60 italic">Henüz plaka eklenmemiş.</p>
+                <p className="text-xs text-yellow-700/60 italic">Bu durağa henüz plaka bağlanmamış.</p>
             )}
         </div>
         
@@ -599,7 +513,6 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
                 className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium disabled:opacity-50"
                 >
                 {loadingAI ? <Loader2 size={14} className="animate-spin"/> : <Sparkles size={14} />}
-                AI ile Tanıtım Yazısı
                 </button>
             </div>
             <textarea
