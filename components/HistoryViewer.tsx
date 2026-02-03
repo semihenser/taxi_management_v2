@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { TaxiStand, ChangeLog } from '../types';
 import { X, Calendar, User, FileText, ArrowLeft, Clock, MapPin, Car, Phone, Info } from 'lucide-react';
@@ -311,7 +310,7 @@ const HistoryViewer: React.FC<HistoryViewerProps> = ({ stand, initialUkomeNo, on
                                 <td className="px-6 py-3 font-medium text-slate-700">
                                    {getFieldLabel(log.fieldName)}
                                 </td>
-                                <td className="px-6 py-3 text-red-500 text-xs line-through opacity-70">
+                                <td className="px-6 py-3 text-red-500 text-xs opacity-70">
                                    {log.oldValue}
                                 </td>
                                 <td className="px-6 py-3 text-green-600 font-bold text-xs">

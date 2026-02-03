@@ -1,7 +1,6 @@
 /// <reference types="vite/client" />
 
-import { initializeApp, getApps } from "firebase/app";
-import type { FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 
 // Konfigürasyon Environment Variable'lardan (VITE_...) okunur.
@@ -24,14 +23,17 @@ if (isConfigured) {
   try {
     // Uygulama daha önce başlatılmış mı kontrol et (Hot Reload hatalarını önler)
     const apps = getApps();
+    
     if (apps.length === 0) {
         app = initializeApp(firebaseConfig);
     } else {
         app = apps[0];
     }
     
-    dbInstance = getFirestore(app);
-    console.log("Firebase başarıyla başlatıldı.");
+    if (app) {
+        dbInstance = getFirestore(app);
+        console.log("Firebase başarıyla başlatıldı.");
+    }
   } catch (error) {
     console.error("Firebase başlatma hatası:", error);
   }

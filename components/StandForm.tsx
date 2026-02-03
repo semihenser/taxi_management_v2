@@ -41,7 +41,8 @@ const OFFICE_TYPES = [
   "TİP1",
   "TİP2",
   "TİP3",
-  "DİĞER"
+  "DİĞER",
+  "YOK"
 ];
 
 const RESPONSIBILITIES = [
@@ -513,6 +514,7 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
                 className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium disabled:opacity-50"
                 >
                 {loadingAI ? <Loader2 size={14} className="animate-spin"/> : <Sparkles size={14} />}
+                AI ile Tanıtım Yazısı
                 </button>
             </div>
             <textarea

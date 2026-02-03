@@ -165,19 +165,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
   };
 
   const handleDownloadReport = () => {
-    if (searchedPlate) {
-        // Rapor için düzleştirilmiş veri gerekebilir, şimdilik raw listeyi geçebiliriz veya 
-        // rapor servisini de grouped data alacak şekilde güncelleyebiliriz.
-        // Hızlı çözüm: processedEvents'i rapora uygun formatta mapleyelim.
-        const reportData = plateHistory.map(item => ({
-            date: item.date,
-            standName: item.type === 'TRANSFER' ? `${item.from} -> ${item.to}` : item.stand,
-            action: item.type,
-            details: `Ref: ${item.ukomeNo || 'Manuel'}`,
-            user: item.user
-        }));
-        generatePlateReport(searchedPlate, reportData, currentStand || null);
-    }
+    // generatePlateReport(searchedPlate, reportData, currentStand || null);
   };
 
   const handleTransfer = async () => {
@@ -325,8 +313,10 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                              </div>
                              
                              <button 
+                                disabled
                                 onClick={handleDownloadReport}
-                                className="flex items-center gap-2 text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                className="flex items-center gap-2 text-xs bg-white border border-slate-300 px-3 py-1.5 rounded-lg text-slate-400 cursor-not-allowed opacity-60"
+                                title="Bakımda"
                              >
                                 <FileDown size={16} /> PDF Rapor
                              </button>

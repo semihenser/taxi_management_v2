@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { TaxiStand, ChangeLog } from '../types';
 import { ArrowLeft, MapPin, Phone, Car, FileText, History, ArrowRight, Building2, ShieldCheck, Info, Clock, FileDown, CheckCircle2 } from 'lucide-react';
 import { generateStandReport } from '../services/reportService';
+import StandMap from './StandMap';
 
 interface StandDetailsProps {
   stand: TaxiStand;
@@ -26,7 +27,6 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
 
     rawHistory.forEach(log => {
         // Gruplama anahtarı: Varsa UKOME No, yoksa Timestamp (Saniye bazlı hassasiyet yeterli)
-        // Timestamp'i string olarak birebir eşleştirmek, aynı anda (batch) kaydedilenleri yakalar.
         const key = log.relatedUkomeNo ? `UKOME_${log.relatedUkomeNo}` : `MANUAL_${log.timestamp}`;
         
         if (!groups[key]) {
@@ -48,29 +48,7 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
   }, [stand.history]);
 
   const handleDownloadReport = () => {
-    generateStandReport(stand);
-  };
-
-  const getFieldLabel = (field: string) => {
-    switch (field) {
-      case 'ukomeDecisionNo': return 'Karar No';
-      case 'ukomeDate': return 'Karar Tarihi';
-      case 'ukomeSummary': return 'Karar Özeti';
-      case 'address': return 'Adres';
-      case 'district': return 'İlçe';
-      case 'neighborhood': return 'Mahalle';
-      case 'street': return 'Sokak';
-      case 'capacity': return 'Kapasite';
-      case 'plates': return 'Plakalar';
-      case 'status': return 'Durum';
-      case 'officeType': return 'Yazıhane';
-      case 'responsibility': return 'Sorumluluk';
-      case 'name': return 'Durak Adı';
-      case 'phone': return 'Telefon';
-      case 'notes': return 'Notlar';
-      case 'location': return 'Konum';
-      default: return field;
-    }
+    // generateStandReport(stand);
   };
 
   return (
@@ -100,8 +78,10 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
         </div>
         <div className="flex items-center gap-3">
             <button
+            disabled
             onClick={handleDownloadReport}
-            className="px-4 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 hover:text-blue-600 transition-colors shadow-sm flex items-center gap-2"
+            className="px-4 py-2.5 bg-white border border-slate-300 text-slate-400 font-medium rounded-lg shadow-sm flex items-center gap-2 cursor-not-allowed opacity-60"
+            title="Şu an hizmet dışı"
             >
             <FileDown size={18} />
             Durak Raporu
@@ -167,22 +147,32 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
               </div>
            </div>
 
-           {/* History Table (Grouped) */}
+           {/* Map Card */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                         <MapPin size={18} className="text-red-500" /> Konum
+                    </h3>
+                </div>
+                <div className="h-[300px] w-full relative">
+                     {stand.location ? (
+                        <StandMap stands={[stand]} />
+                     ) : (
+                        <div className="flex items-center justify-center h-full text-slate-400 bg-slate-50">Konum bilgisi yok.</div>
+                     )}
+                </div>
+            </div>
+
+           {/* History Table (Simplified) */}
            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                         <History size={18} className="text-purple-500" /> Revize Geçmişi
                         </h3>
-                        <button 
-                            onClick={() => onViewHistory()}
-                            className="text-xs bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-200 font-medium transition-colors flex items-center gap-1"
-                        >
-                            <Clock size={12} /> Zaman Makinesi / Detaylı İncele
-                        </button>
                     </div>
                     <span className="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-md">
-                        {groupedHistory.length} İşlem
+                        {groupedHistory.length} Kayıt
                     </span>
                 </div>
               <div className="overflow-x-auto">
@@ -190,60 +180,44 @@ const StandDetails: React.FC<StandDetailsProps> = ({ stand, onBack, onRevise, on
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-3 font-semibold text-slate-600 w-32">Tarih</th>
-                                <th className="px-6 py-3 font-semibold text-slate-600 w-40">İşlem Kaynağı</th>
-                                <th className="px-6 py-3 font-semibold text-slate-600">Yapılan Değişiklikler</th>
-                                <th className="px-6 py-3 font-semibold text-slate-600 w-24">Kullanıcı</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600">İşlem Tarihi</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600">UKOME Karar No</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600">Karar Tarihi</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600">Açıklama</th>
+                                <th className="px-6 py-3 font-semibold text-slate-600 text-right">Detay</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {groupedHistory.map((group) => (
-                                <tr key={group.id} className="hover:bg-slate-50 transition-colors">
-                                    <td className="px-6 py-4 align-top text-slate-500 font-mono text-xs">
-                                        <div>{new Date(group.timestamp).toLocaleDateString('tr-TR')}</div>
-                                        <div className="text-[10px] text-slate-400">{new Date(group.timestamp).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'})}</div>
-                                    </td>
-                                    <td className="px-6 py-4 align-top">
-                                        {group.ukomeNo ? (
-                                            <div className="flex flex-col">
-                                                <span 
-                                                    onClick={() => onViewHistory(group.ukomeNo)}
-                                                    className="font-bold text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded w-fit cursor-pointer hover:bg-blue-100 border border-blue-100 mb-1"
-                                                    title="Geçmiş durumunu simüle et"
-                                                >
-                                                    UKOME: {group.ukomeNo}
-                                                </span>
-                                                {group.ukomeDate && (
-                                                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                                        <CalendarIcon size={10} /> {new Date(group.ukomeDate).toLocaleDateString('tr-TR')}
-                                                     </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                                                <FileText size={10} /> Manuel Kayıt
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 align-top">
-                                        <div className="flex flex-col gap-1.5">
-                                            {group.changes.map((change, idx) => (
-                                                <div key={idx} className="text-xs text-slate-700 flex items-start gap-2">
-                                                    <span className="font-semibold min-w-[80px] text-slate-900">• {getFieldLabel(change.fieldName)}:</span>
-                                                    <span className="flex-1 text-slate-600 break-all">
-                                                        <span className="text-red-400 line-through mr-1 opacity-70">{change.oldValue}</span> 
-                                                        <span className="text-slate-300">→</span> 
-                                                        <span className="text-green-600 font-medium ml-1">{change.newValue}</span>
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 align-top text-slate-500 text-xs">
-                                        {group.user}
-                                    </td>
-                                </tr>
-                            ))}
+                            {groupedHistory.map((group) => {
+                                // Find summary in changes or use generic
+                                const summaryLog = group.changes.find(c => c.fieldName === 'ukomeSummary');
+                                const summaryText = summaryLog ? summaryLog.newValue : (group.changes.length > 0 ? '-' : 'Değişiklik Yok');
+                                
+                                return (
+                                    <tr key={group.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">
+                                            {new Date(group.timestamp).toLocaleDateString('tr-TR')}
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-slate-800">
+                                            {group.ukomeNo || 'Manuel'}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-600">
+                                            {group.ukomeDate ? new Date(group.ukomeDate).toLocaleDateString('tr-TR') : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
+                                            {summaryText}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button 
+                                                onClick={() => onViewHistory(group.ukomeNo)}
+                                                className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md hover:bg-blue-100 font-medium transition-colors border border-blue-100"
+                                            >
+                                                İncele
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                  ) : (
