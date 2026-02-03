@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { TaxiStand } from '../types';
-import { Search, Save, History, Car, ArrowRightLeft, MapPin, AlertCircle, CheckCircle2, ArrowLeft, Building2, Calendar, FileDown } from 'lucide-react';
+import { Search, Save, History, Car, ArrowRightLeft, MapPin, AlertCircle, CheckCircle2, ArrowLeft, Building2, Calendar, FileDown, FileText, ArrowRight } from 'lucide-react';
 import { saveStand, generateChanges } from '../services/storageService';
 import { generatePlateReport } from '../services/reportService';
 
@@ -14,6 +14,11 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
   const [searchTerm, setSearchTerm] = useState('');
   const [searchedPlate, setSearchedPlate] = useState<string | null>(null);
   const [targetStandId, setTargetStandId] = useState<string>('');
+  
+  // Transfer için UKOME Bilgileri
+  const [transferUkomeNo, setTransferUkomeNo] = useState('');
+  const [transferUkomeDate, setTransferUkomeDate] = useState(new Date().toISOString().split('T')[0]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -36,16 +41,17 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
     return stands.find(s => s.plates.includes(normalizedSearch));
   }, [stands, normalizedSearch]);
 
-  // Plaka Geçmişini Analiz Et
+  // Plaka Geçmişini Analiz Et ve Grupla
   const plateHistory = useMemo(() => {
     if (!normalizedSearch) return [];
     
-    const historyItems: {
+    // 1. Ham hareketleri topla
+    const rawEvents: {
         id: string;
         date: string;
+        ukomeNo?: string;
         standName: string;
         action: 'GİRİŞ' | 'ÇIKIŞ';
-        details: string;
         user: string;
     }[] = [];
 
@@ -59,21 +65,21 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                 const isIn = newPlates.includes(normalizedSearch);
 
                 if (!wasIn && isIn) {
-                    historyItems.push({
+                    rawEvents.push({
                         id: log.id,
                         date: log.timestamp,
+                        ukomeNo: log.relatedUkomeNo,
                         standName: stand.name,
                         action: 'GİRİŞ',
-                        details: `Durağa eklendi. Ref: ${log.relatedUkomeNo || 'Manuel İşlem'}`,
                         user: log.changedBy
                     });
                 } else if (wasIn && !isIn) {
-                    historyItems.push({
+                    rawEvents.push({
                         id: log.id,
                         date: log.timestamp,
+                        ukomeNo: log.relatedUkomeNo,
                         standName: stand.name,
                         action: 'ÇIKIŞ',
-                        details: `Duraktan ayrıldı. Ref: ${log.relatedUkomeNo || 'Manuel İşlem'}`,
                         user: log.changedBy
                     });
                 }
@@ -81,7 +87,70 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         });
     });
 
-    return historyItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // 2. Hareketleri eşleştir (Transfer Birleştirme)
+    const processedEvents: {
+        id: string;
+        date: string;
+        type: 'TRANSFER' | 'GİRİŞ' | 'ÇIKIŞ';
+        from?: string;
+        to?: string;
+        stand?: string; // Giriş veya Çıkış için tekil durak
+        ukomeNo?: string;
+        user: string;
+    }[] = [];
+
+    // Olayları tarihe göre sırala
+    rawEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const usedIds = new Set<string>();
+
+    rawEvents.forEach((event) => {
+        if (usedIds.has(event.id)) return;
+
+        // Bu olay bir UKOME kararına mı bağlı?
+        if (event.ukomeNo) {
+            // Aynı UKOME numarasına sahip, zıt aksiyonlu (Giriş <-> Çıkış) diğer olayı bul
+            const pair = rawEvents.find(e => 
+                e.id !== event.id && 
+                !usedIds.has(e.id) &&
+                e.ukomeNo === event.ukomeNo && 
+                e.action !== event.action
+            );
+
+            if (pair) {
+                // Transfer Bulundu!
+                const exitEvent = event.action === 'ÇIKIŞ' ? event : pair;
+                const entryEvent = event.action === 'GİRİŞ' ? event : pair;
+
+                processedEvents.push({
+                    id: event.id + pair.id, // Unique ID
+                    date: entryEvent.date, // Giriş tarihini baz al
+                    type: 'TRANSFER',
+                    from: exitEvent.standName,
+                    to: entryEvent.standName,
+                    ukomeNo: event.ukomeNo,
+                    user: event.user
+                });
+
+                usedIds.add(event.id);
+                usedIds.add(pair.id);
+                return;
+            }
+        }
+
+        // Eşleşme yoksa tekil olarak ekle
+        processedEvents.push({
+            id: event.id,
+            date: event.date,
+            type: event.action,
+            stand: event.standName,
+            ukomeNo: event.ukomeNo,
+            user: event.user
+        });
+        usedIds.add(event.id);
+    });
+
+    return processedEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [stands, normalizedSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -91,17 +160,35 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         setSearchedPlate(plate);
         setSuccessMessage(null);
         setTargetStandId('');
+        setTransferUkomeNo(''); 
     }
   };
 
   const handleDownloadReport = () => {
     if (searchedPlate) {
-        generatePlateReport(searchedPlate, plateHistory, currentStand || null);
+        // Rapor için düzleştirilmiş veri gerekebilir, şimdilik raw listeyi geçebiliriz veya 
+        // rapor servisini de grouped data alacak şekilde güncelleyebiliriz.
+        // Hızlı çözüm: processedEvents'i rapora uygun formatta mapleyelim.
+        const reportData = plateHistory.map(item => ({
+            date: item.date,
+            standName: item.type === 'TRANSFER' ? `${item.from} -> ${item.to}` : item.stand,
+            action: item.type,
+            details: `Ref: ${item.ukomeNo || 'Manuel'}`,
+            user: item.user
+        }));
+        generatePlateReport(searchedPlate, reportData, currentStand || null);
     }
   };
 
   const handleTransfer = async () => {
     if (!searchedPlate || !targetStandId) return;
+    
+    // Validasyonlar
+    if (!transferUkomeNo.trim()) {
+        alert("Plaka transferi resmi bir işlem olduğu için UKOME Karar Numarası girilmesi zorunludur.");
+        return;
+    }
+
     if (currentStand && currentStand.id === targetStandId) {
         alert("Plaka zaten bu durakta.");
         return;
@@ -117,20 +204,19 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         if (!targetStand) throw new Error("Hedef durak bulunamadı.");
 
         const timestamp = new Date().toISOString();
-        const transferRef = `TRANSFER-${new Date().toLocaleDateString('tr-TR').replace(/\./g, '')}`;
-
+        
         // 1. Mevcut duraktan çıkar (Varsa)
         if (currentStand) {
             const updatedCurrentStand = {
                 ...currentStand,
                 plates: currentStand.plates.filter(p => p !== searchedPlate),
+                ukomeDecisionNo: transferUkomeNo, 
+                ukomeDate: transferUkomeDate,     
                 updatedAt: timestamp
             };
             
             const changes = generateChanges(currentStand, updatedCurrentStand);
-            // Log detaylarını özelleştir
             changes.forEach(c => {
-                c.relatedUkomeNo = transferRef;
                 c.changedBy = 'PlakaYönetim';
             });
             
@@ -142,12 +228,13 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         const updatedTargetStand = {
             ...targetStand,
             plates: [...targetStand.plates, searchedPlate].sort(),
+            ukomeDecisionNo: transferUkomeNo, 
+            ukomeDate: transferUkomeDate,     
             updatedAt: timestamp
         };
 
         const changes = generateChanges(targetStand, updatedTargetStand);
         changes.forEach(c => {
-            c.relatedUkomeNo = transferRef;
             c.changedBy = 'PlakaYönetim';
         });
         updatedTargetStand.history = [...targetStand.history, ...changes];
@@ -155,8 +242,9 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
         await saveStand(updatedTargetStand);
 
         await onRefresh();
-        setSuccessMessage(`${searchedPlate} başarıyla ${targetStand.name} durağına taşındı.`);
+        setSuccessMessage(`${searchedPlate} başarıyla ${targetStand.name} durağına taşındı. (Karar: ${transferUkomeNo})`);
         setTargetStandId('');
+        setTransferUkomeNo('');
     } catch (error) {
         console.error(error);
         alert("Transfer sırasında hata oluştu.");
@@ -264,7 +352,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                          <div className="bg-purple-50 px-6 py-4 border-b border-purple-100">
                              <h3 className="font-semibold text-purple-900 flex items-center gap-2">
-                                 <ArrowRightLeft size={18} /> Durak Değiştir / Transfer Et
+                                 <ArrowRightLeft size={18} /> Durak Değişikliği / Transfer
                              </h3>
                          </div>
                          <div className="p-6">
@@ -276,6 +364,34 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                              )}
                              
                              <div className="space-y-4">
+                                 {/* UKOME Bilgileri Alanı */}
+                                 <div className="bg-white p-3 rounded-lg border border-purple-100 shadow-sm">
+                                    <h4 className="text-xs font-bold text-purple-800 uppercase mb-3 flex items-center gap-1">
+                                        <FileText size={12} /> Transfer Dayanağı (UKOME)
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-700 mb-1">Karar No <span className="text-red-500">*</span></label>
+                                            <input 
+                                                type="text" 
+                                                value={transferUkomeNo}
+                                                onChange={(e) => setTransferUkomeNo(e.target.value)}
+                                                className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                                placeholder="Örn: 2024/5-12"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-slate-700 mb-1">Karar Tarihi <span className="text-red-500">*</span></label>
+                                            <input 
+                                                type="date" 
+                                                value={transferUkomeDate}
+                                                onChange={(e) => setTransferUkomeDate(e.target.value)}
+                                                className="w-full px-2 py-1.5 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                 </div>
+
                                  <div>
                                      <label className="block text-sm font-medium text-slate-700 mb-1">Yeni Durak Seçin</label>
                                      <select
@@ -321,21 +437,44 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
                              <div className="divide-y divide-slate-100">
                                  {plateHistory.map((item) => (
                                      <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors">
-                                         <div className="flex justify-between items-start mb-1">
-                                             <div className="font-bold text-slate-800">{item.standName}</div>
+                                         {/* Header Line: Action and UKOME */}
+                                         <div className="flex justify-between items-center mb-2">
                                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                                                 item.action === 'GİRİŞ' 
-                                                 ? 'bg-green-50 text-green-700 border-green-200' 
+                                                 item.type === 'TRANSFER' 
+                                                 ? 'bg-purple-100 text-purple-700 border-purple-200' 
+                                                 : item.type === 'GİRİŞ'
+                                                 ? 'bg-green-50 text-green-700 border-green-200'
                                                  : 'bg-red-50 text-red-700 border-red-200'
                                              }`}>
-                                                 {item.action}
+                                                 {item.type}
                                              </span>
+                                             {item.ukomeNo && (
+                                                 <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                     UKOME: {item.ukomeNo}
+                                                 </span>
+                                             )}
                                          </div>
-                                         <div className="text-sm text-slate-500 mb-2">{item.details}</div>
+
+                                         {/* Content Line: From -> To or Single Stand */}
+                                         <div className="mb-2">
+                                            {item.type === 'TRANSFER' ? (
+                                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                                    <span className="text-slate-500 font-normal">{item.from}</span>
+                                                    <ArrowRight size={14} className="text-slate-400" />
+                                                    <span className="text-blue-700">{item.to}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="font-bold text-slate-800 text-sm">
+                                                    {item.stand}
+                                                </div>
+                                            )}
+                                         </div>
+
+                                         {/* Footer Line: Date and User */}
                                          <div className="flex items-center gap-4 text-xs text-slate-400">
                                              <div className="flex items-center gap-1">
                                                  <Calendar size={12} />
-                                                 {new Date(item.date).toLocaleDateString('tr-TR')} {new Date(item.date).toLocaleTimeString('tr-TR', {hour: '2-digit', minute:'2-digit'})}
+                                                 {new Date(item.date).toLocaleDateString('tr-TR')}
                                              </div>
                                              <div>İşlem: {item.user}</div>
                                          </div>

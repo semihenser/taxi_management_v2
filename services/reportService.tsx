@@ -2,13 +2,8 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { TaxiStand } from '../types';
 
-// Extend jsPDF type to include autoTable property from the plugin
-interface jsPDFWithAutoTable extends jsPDF {
-  lastAutoTable: { finalY: number };
-}
-
 export const generateStandReport = (stand: TaxiStand) => {
-  const doc = new jsPDF() as jsPDFWithAutoTable;
+  const doc = new jsPDF();
   
   // Font ayarları (Türkçe karakter desteği için varsayılan fontlar bazen sorun çıkarabilir, 
   // ancak jspdf modern versiyonlarında UTF-8 desteği iyileştirildi. 
@@ -46,7 +41,8 @@ export const generateStandReport = (stand: TaxiStand) => {
     styles: { font: "helvetica", fontSize: 10 }
   });
 
-  let currentY = doc.lastAutoTable.finalY + 15;
+  // Access lastAutoTable via casting to any because it is added dynamically by the plugin
+  let currentY = (doc as any).lastAutoTable.finalY + 15;
 
   // 2. UKOME Bilgileri
   doc.setFontSize(14);
@@ -64,7 +60,7 @@ export const generateStandReport = (stand: TaxiStand) => {
     headStyles: { fillColor: [52, 73, 94] }
   });
 
-  currentY = doc.lastAutoTable.finalY + 15;
+  currentY = (doc as any).lastAutoTable.finalY + 15;
 
   // 3. Plaka Listesi
   doc.setFontSize(14);
@@ -101,7 +97,7 @@ export const generateStandReport = (stand: TaxiStand) => {
     }
   });
 
-  currentY = doc.lastAutoTable.finalY + 15;
+  currentY = (doc as any).lastAutoTable.finalY + 15;
 
   // 4. Değişiklik Geçmişi
   doc.setFontSize(14);
@@ -144,7 +140,7 @@ export const generatePlateReport = (
     history: any[], 
     currentStand: TaxiStand | null
 ) => {
-    const doc = new jsPDF() as jsPDFWithAutoTable;
+    const doc = new jsPDF();
 
     // Header
     doc.setFontSize(20);
@@ -179,7 +175,7 @@ export const generatePlateReport = (
         columnStyles: { 0: { cellWidth: 50, textColor: 100 } }
     });
 
-    let currentY = doc.lastAutoTable.finalY + 15;
+    let currentY = (doc as any).lastAutoTable.finalY + 15;
 
     // Geçmiş Tablosu
     doc.setFontSize(14);
