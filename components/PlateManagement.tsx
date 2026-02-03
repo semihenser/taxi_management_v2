@@ -401,7 +401,7 @@ const PlateManagement: React.FC<PlateManagementProps> = ({ stands, onRefresh, on
 
                                  <div>
                                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                                        {currentStand ? 'Yeni Durak Seçin (Transfer)' : 'Durağa Ekle (İlk Atama)'}
+                                        {currentStand ? 'Yeni Durak Seçin' : 'Durağa Ekle (İlk Atama)'}
                                      </label>
                                      <select
                                          value={targetStandId}
