@@ -486,7 +486,7 @@ const StandForm: React.FC<StandFormProps> = ({ initialData, existingStands = [],
             <div className="bg-white/50 p-3 rounded-lg border border-yellow-100 mb-3 flex items-start gap-2 text-xs text-yellow-800">
                 <Info size={14} className="shrink-0 mt-0.5" />
                 <p>
-                    <strong>Bilgilendirme:</strong> Veri bütünlüğünü sağlamak amacıyla; duraklara plaka ekleme, çıkarma veya transfer işlemleri sadece ana menüdeki <strong>"Plaka Yönetim Paneli"</strong> üzerinden yapılmaktadır. Bu ekranda sadece mevcut bağlı plakalar görüntülenir.
+                    <strong>Bilgilendirme:</strong> Veri bütünlüğünü sağlamak amacıyla; duraklara plaka ekleme, çıkarma veya transfer işlemleri sadece ana menüdeki <strong>"Plaka İşlemleri"</strong> üzerinden yapılmaktadır. Bu ekranda sadece mevcut bağlı plakalar görüntülenir.
                 </p>
             </div>
 

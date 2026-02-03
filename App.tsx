@@ -226,7 +226,7 @@ const App: React.FC = () => {
                       <div className="bg-purple-50 group-hover:bg-purple-500 p-4 rounded-xl mb-6 transition-colors">
                           <Car size={32} className="text-purple-600 group-hover:text-white transition-colors" />
                       </div>
-                      <h2 className="text-2xl font-bold text-slate-800 group-hover:text-white mb-2">Plaka Yönetim Paneli</h2>
+                      <h2 className="text-2xl font-bold text-slate-800 group-hover:text-white mb-2">Plaka İşlemleri</h2>
                       <p className="text-slate-500 group-hover:text-purple-100">
                           Plaka sorgulayın, araçların hangi durakta çalıştığını görün ve durak transfer işlemlerini gerçekleştirin.
                       </p>
