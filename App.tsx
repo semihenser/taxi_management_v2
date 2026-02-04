@@ -189,13 +189,13 @@ const App: React.FC = () => {
               <div className="text-center mb-10">
                    {/* Custom Branding Icon: Yellow Pin with Black Circle and TAKSI text */}
                    <div className="flex justify-center mb-6">
-                      <svg width="120" height="150" viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl hover:scale-105 transition-transform duration-300">
+                      <svg width="110" height="150" viewBox="0 0 100 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl hover:scale-105 transition-transform duration-300">
                           {/* Pin Shape */}
-                          <path d="M50 0C22.4 0 0 22.4 0 50C0 85 50 130 50 130C50 130 100 85 100 50C100 22.4 77.6 0 50 0Z" fill="#FACC15" stroke="#EAB308" strokeWidth="2" />
+                          <path d="M50 0C22.4 0 0 22.4 0 50C0 85 50 130 50 130C50 130 100 85 100 50C100 22.4 77.6 0 50 0Z" fill="#FACC15" stroke="#EAB308" strokeWidth="1" />
                           {/* Inner Black Circle */}
                           <circle cx="50" cy="50" r="42" fill="#09090b" />
                           {/* Text TAKSI */}
-                          <text x="50" y="62" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="26" fill="#FACC15" letterSpacing="-0.5">TAKSI</text>
+                          <text x="50" y="60" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="900" fontSize="23" fill="#FACC15" letterSpacing="-0.5">TAKSİ</text>
                       </svg>
                    </div>
 
